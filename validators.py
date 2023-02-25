@@ -177,6 +177,302 @@ validator_choice = 'Stakecito'
 validator_choice = st.selectbox("Select a validator", options = df2['label'].unique() ) 
 
 
+df_query_aux2 ="""
+with votes_times as 
+(select proposal_id, max(date_trunc('day', block_timestamp)) as date 
+ from osmosis.core.fact_governance_votes
+ where tx_succeeded = 'TRUE'
+ and proposal_id =  '"""
+
+sql3 = df_query_aux2 + str(proposal_choice) + """' 
+group by proposal_id ),  
+   
+    
+votes_proposal_aux as (
+select voter, proposal_id, vote_option, rank() over (partition by voter, proposal_id order by block_timestamp desc) as rank
+from osmosis.core.fact_governance_votes
+where tx_succeeded = 'TRUE'
+and proposal_id =  '""" + str(proposal_choice) + """'
+),
+votes_proposal as 
+(select voter, 
+proposal_id,
+b.description
+from votes_proposal_aux a 
+left join osmosis.core.dim_vote_options b 
+on a.vote_option = b.vote_id
+where a.rank = 1
+and proposal_id =  '""" + str(proposal_choice) + """'
+),
+delegations as (
+select date_trunc('day', block_timestamp) as date,
+delegator_address,
+validator_address,
+sum(amount/pow(10, decimal)) as amount 
+from osmosis.core.fact_staking
+where tx_succeeded = 'TRUE' 
+and action = 'delegate'
+and date_trunc('day', block_timestamp) <= (select date from votes_times)
+group by date, delegator_address, validator_address
+),
+undelegations as (
+select date_trunc('day', block_timestamp) as date,
+delegator_address,
+validator_address,
+sum(amount/pow(10, decimal))*(-1) as amount 
+from osmosis.core.fact_staking
+where tx_succeeded = 'TRUE' 
+and action = 'undelegate'
+and date_trunc('day', block_timestamp) <= (select date from votes_times)
+group by date, delegator_address, validator_address
+),
+redelegations_to as 
+(
+select date_trunc('day', block_timestamp) as date,
+delegator_address,
+validator_address,
+sum(amount/pow(10, decimal)) as amount 
+from osmosis.core.fact_staking
+where tx_succeeded = 'TRUE' 
+and action = 'redelegate'
+and date_trunc('day', block_timestamp) <= (select date from votes_times)
+group by date, delegator_address, validator_address
+),
+redelegations_from as 
+(
+select date_trunc('day', block_timestamp) as date,
+delegator_address,
+redelegate_source_validator_address as validator_address,
+sum(amount/pow(10, decimal))*(-1) as amount 
+from osmosis.core.fact_staking
+where tx_succeeded = 'TRUE' 
+and action = 'redelegate'
+and date_trunc('day', block_timestamp) <= (select date from votes_times)
+group by date, delegator_address, redelegate_source_validator_address
+),
+validators_address as (
+select address, label, raw_metadata:"account_address" as account_address
+from osmosis.core.fact_validators 
+),
+val_votes_aux as 
+(
+select voter, 
+proposal_id, 
+b.description, 
+rank() over (partition by voter, proposal_id order by block_timestamp desc) as rank
+from osmosis.core.fact_governance_votes a 
+left join osmosis.core.dim_vote_options b 
+on a.vote_option = b.vote_id
+where voter in (select distinct account_address from validators_address)
+and proposal_id =  '""" + str(proposal_choice) +"""' 
+and tx_succeeded = 'TRUE'
+),
+val_votes as (
+select voter, b.address, proposal_id, description from val_votes_aux a
+left join validators_address b 
+on a.voter = b.account_address
+where rank = 1 
+),
+all_votes_per_proposal_and_validator as 
+(
+select 
+delegator_address, 
+case when b.voter is null then 'Did not vote'
+else b.description end as vote, 
+validator_address, 
+c.label, 
+c.rank,
+case when d.description is null then 'Did not vote'
+else d.description end as validator_vote,
+sum(amount) as total_amount
+from (
+  select * from delegations
+  union all 
+  select * from undelegations 
+  union all 
+  select * from redelegations_to 
+  union all 
+  select * from redelegations_from
+  ) a 
+left join votes_proposal b 
+on a.delegator_address = b.voter
+left join osmosis.core.fact_validators c 
+on a.validator_address = c.address 
+left join val_votes d 
+on a.validator_address = d.address 
+where c.label =  '""" + str(validator_choice) + """'
+group by 
+delegator_address, 
+vote,
+validator_address,
+c.label,
+c.rank,
+validator_vote
+)
+select validator_vote,
+vote as delegator_vote,
+count(distinct delegator_address) as num_voters,
+sum(total_amount) as total_amount 
+from all_votes_per_proposal_and_validator 
+group by validator_vote,
+vote
+"""
+
+results3 = compute(sql3)
+df3 = pd.DataFrame(results3.records)
+df3.info()
+st.dataframe(df3) 
+
+st.text("")
+st.markdown("The way to read the table above is as follows. For the selected proposal ID and validator, we see first the validator vote, followed by the number of its delegators who voted for any proposal, if they voted, and the amount they account for of that specific delegator.")
+st.text("")
+st.subheader("Redelegations from the selected validator")
+st.text("")
+st.markdown("We can display how users behaved. For instance, we can first look at how many redelegations there were from the selected validator towards other validators, and what option did those validators vote.")
+st.text("")  
+
+sql4 = df_query_aux2 + str(proposal_choice) +"""'
+group by proposal_id
+),
+-- This part is done to drop later all duplicate votes
+votes_proposal_aux as (
+select voter, proposal_id, vote_option, rank() over (partition by voter, proposal_id order by block_timestamp desc) as rank
+from osmosis.core.fact_governance_votes
+where tx_succeeded = 'TRUE'
+and proposal_id =  '"""+ str(proposal_choice)+"""'
+),
+votes_proposal as 
+(select voter, 
+proposal_id,
+b.description
+from votes_proposal_aux a 
+left join osmosis.core.dim_vote_options b 
+on a.vote_option = b.vote_id
+where a.rank = 1
+and proposal_id =  '"""+str(proposal_choice) +"""'
+),
+redelegations as 
+(
+select date_trunc('day', block_timestamp) as date,
+delegator_address,
+validator_address,
+redelegate_source_validator_address,
+sum(amount/pow(10, decimal)) as amount 
+from osmosis.core.fact_staking
+where tx_succeeded = 'TRUE' 
+and action = 'redelegate'
+and date_trunc('day', block_timestamp) between to_date((select date from votes_times)) - 5 and  to_date((select date from votes_times)) + 7
+group by date, delegator_address, validator_address, REDELEGATE_SOURCE_VALIDATOR_ADDRESS
+),
+validators_address as (
+select address, label, raw_metadata:"account_address" as account_address
+from osmosis.core.fact_validators 
+),
+val_votes_aux as 
+(
+select voter, 
+proposal_id, 
+b.description, 
+rank() over (partition by voter, proposal_id order by block_timestamp desc) as rank
+from osmosis.core.fact_governance_votes a 
+left join osmosis.core.dim_vote_options b 
+on a.vote_option = b.vote_id
+where voter in (select distinct account_address from validators_address)
+and proposal_id =  '"""+str(proposal_choice) +"""'
+and tx_succeeded = 'TRUE'
+),
+val_votes as (
+select voter, b.address, proposal_id, description from val_votes_aux a
+left join validators_address b 
+on a.voter = b.account_address
+where rank = 1 
+),
+all_votes_per_proposal_and_validator as 
+(
+select 
+delegator_address, 
+case when b.voter is null then 'Did not vote'
+else b.description end as vote, 
+redelegate_source_validator_address as redelegated_from,
+validator_address as redelegated_to,
+case when redelegated_from = 'osmovaloper14n8pf9uxhuyxqnqryvjdr8g68na98wn5amq3e5' then 'Prism validator'
+else cc.label end as redelegated_from_label,
+cc.rank as redelegated_from_rank, 
+case when redelegated_to = 'osmovaloper14n8pf9uxhuyxqnqryvjdr8g68na98wn5amq3e5' then 'Prism validator'
+else c.label end as redelegated_to_label,
+c.rank as redelegated_to_rank,
+case when d.description is null then 'Did not vote'
+else d.description end as validator_redelegated_from_vote,
+case when e.description is null then 'Did not vote'
+else e.description end as validator_redelegated_to_vote,
+sum(amount) as total_amount
+from redelegations a 
+left join votes_proposal b 
+on a.delegator_address = b.voter
+left join osmosis.core.fact_validators c 
+on a.validator_address = c.address 
+left join osmosis.core.fact_validators cc 
+on a.redelegate_source_validator_address = cc.address 
+left join val_votes d 
+on a.validator_address = d.address 
+left join val_votes e 
+on a.redelegate_source_validator_address = d.address 
+where c.label =  '"""+str(validator_choice) +"""'
+group by 
+delegator_address, 
+vote,
+redelegated_from,
+redelegated_to,
+redelegated_from_label,
+redelegated_from_rank,
+redelegated_to_label,
+redelegated_to_rank, 
+validator_redelegated_from_vote,
+validator_redelegated_to_vote
+)
+select * from all_votes_per_proposal_and_validator"""
+results4 = compute(sql4)
+df4 = pd.DataFrame(results4.records)
+df4.info()
+
+
+
+
+if df4.empty:
+    st.markdown("There were no redelegations from the selected validator and proposal ID")
+else: 
+    
+    df4_1 = df4.groupby(by=['redelegated_from_label','validator_redelegated_from_vote']).sum().reset_index(drop=False)
+    df4_2 = df4.groupby(by=['redelegated_from_label','vote']).sum().reset_index(drop=False)
+
+    fig1 = px.bar(df4_1, x="redelegated_from_label", y="total_amount", color="validator_redelegated_from_vote", color_discrete_sequence=px.colors.qualitative.Vivid)
+    fig1.update_layout(
+    title='Selected proposal and validator - Vote choice and amount redelegated from other validators',
+    xaxis_tickfont_size=14,
+    yaxis_tickfont_size=14,
+    bargap=0.15, # gap between bars of adjacent location coordinates.
+    bargroupgap=0.1 # gap between bars of the same location coordinate.
+    )
+    st.plotly_chart(fig1, theme="streamlit", use_container_width=True)
+    st.text("")
+    st.markdown("Apart from this, we can also display how individual delegators who redelegated to the validators displayed above voted. Thus, the following chart displays the same numbers as the chart above, but differenciating by delegators votes. This will allow any validator using this dashboard to see whether they believe their voting option influenced somehow their delegators or if the reason for redelegations seems to be a different one. ")
+    st.text("") 
+    
+    fig1 = px.bar(df4_2, x="redelegated_from_label", y="total_amount", color="vote", color_discrete_sequence=px.colors.qualitative.Vivid)
+    fig1.update_layout(
+    title='Selected proposal and validator - Vote choice and amount redelegated from other validators - Redelegator voting choice',
+    xaxis_tickfont_size=14,
+    yaxis_tickfont_size=14,
+    bargap=0.15, # gap between bars of adjacent location coordinates.
+    bargroupgap=0.1 # gap between bars of the same location coordinate.
+    )
+    st.plotly_chart(fig1, theme="streamlit", use_container_width=True)
+    st.text("")
+    st.markdown("Below I have also displayed the individual values which account for the previous charts, in case any further analysis is desired.")
+    st.text("")
+    st.text("")
+    st.dataframe(df_delegator_reledlegations_from) 
+
 
 
 
