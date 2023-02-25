@@ -447,7 +447,10 @@ else:
 
     fig1 = px.bar(df4_1, x="redelegated_from_label", y="total_amount", color="validator_redelegated_from_vote", color_discrete_sequence=px.colors.qualitative.Vivid)
     fig1.update_layout(
-    title='Selected proposal and validator - Vote choice and amount redelegated from other validators',
+    title="Selected proposal and validator - Vote choice and amount redelegated from other validators",
+    xaxis_title="Validator redelegated from",
+    yaxis_title="Amount (OSMO)",
+    legend_title="Validator choice",
     xaxis_tickfont_size=14,
     yaxis_tickfont_size=14,
     bargap=0.15, # gap between bars of adjacent location coordinates.
@@ -460,7 +463,10 @@ else:
     
     fig1 = px.bar(df4_2, x="redelegated_from_label", y="total_amount", color="vote", color_discrete_sequence=px.colors.qualitative.Vivid)
     fig1.update_layout(
-    title='Selected proposal and validator - Vote choice and amount redelegated from other validators - Redelegator voting choice',
+    title="Selected proposal and validator - Vote choice and amount redelegated from other validators - Redelegator voting choice",
+    xaxis_title="Validator redelegated from",
+    yaxis_title="Amount (OSMO)",
+    legend_title="Redelegator choice",
     xaxis_tickfont_size=14,
     yaxis_tickfont_size=14,
     bargap=0.15, # gap between bars of adjacent location coordinates.
@@ -471,10 +477,163 @@ else:
     st.markdown("Below I have also displayed the individual values which account for the previous charts, in case any further analysis is desired.")
     st.text("")
     st.text("")
-    st.dataframe(df_delegator_reledlegations_from) 
+    st.dataframe(df4) 
 
 
 
+sql5 = df_query_aux2 + str(proposal_choice) +"""'
+group by proposal_id
+),
+-- This part is done to drop later all duplicate votes
+votes_proposal_aux as (
+select voter, proposal_id, vote_option, rank() over (partition by voter, proposal_id order by block_timestamp desc) as rank
+from osmosis.core.fact_governance_votes
+where tx_succeeded = 'TRUE'
+and proposal_id =  '"""+ str(proposal_choice)+"""'
+),
+votes_proposal as 
+(select voter, 
+proposal_id,
+b.description
+from votes_proposal_aux a 
+left join osmosis.core.dim_vote_options b 
+on a.vote_option = b.vote_id
+where a.rank = 1
+and proposal_id =  '"""+str(proposal_choice) +"""'
+),
+redelegations as 
+(
+select date_trunc('day', block_timestamp) as date,
+delegator_address,
+validator_address,
+redelegate_source_validator_address,
+sum(amount/pow(10, decimal)) as amount 
+from osmosis.core.fact_staking
+where tx_succeeded = 'TRUE' 
+and action = 'redelegate'
+and date_trunc('day', block_timestamp) between to_date((select date from votes_times)) -5 and  to_date((select date from votes_times)) + 7
+group by date, delegator_address, validator_address, REDELEGATE_SOURCE_VALIDATOR_ADDRESS
+),
+validators_address as (
+select address, label, raw_metadata:"account_address" as account_address
+from osmosis.core.fact_validators 
+),
+val_votes_aux as 
+(
+select voter, 
+proposal_id, 
+b.description, 
+rank() over (partition by voter, proposal_id order by block_timestamp desc) as rank
+from osmosis.core.fact_governance_votes a 
+left join osmosis.core.dim_vote_options b 
+on a.vote_option = b.vote_id
+where voter in (select distinct account_address from validators_address)
+and proposal_id =  '"""+str(proposal_choice) +"""'
+and tx_succeeded = 'TRUE'
+),
+val_votes as (
+select voter, b.address, proposal_id, description from val_votes_aux a
+left join validators_address b 
+on a.voter = b.account_address
+where rank = 1 
+),
+all_votes_per_proposal_and_validator as 
+(
+select 
+delegator_address, 
+case when b.voter is null then 'Did not vote'
+else b.description end as vote, 
+redelegate_source_validator_address as redelegated_from,
+validator_address as redelegated_to,
+case when redelegated_from = 'osmovaloper14n8pf9uxhuyxqnqryvjdr8g68na98wn5amq3e5' then 'Prism validator'
+else cc.label end as redelegated_from_label,
+cc.rank as redelegated_from_rank, 
+case when redelegated_to = 'osmovaloper14n8pf9uxhuyxqnqryvjdr8g68na98wn5amq3e5' then 'Prism validator'
+else c.label end as redelegated_to_label,
+c.rank as redelegated_to_rank,
+case when d.description is null then 'Did not vote'
+else d.description end as validator_redelegated_from_vote,
+case when e.description is null then 'Did not vote'
+else e.description end as validator_redelegated_to_vote,
+sum(amount) as total_amount
+from redelegations a 
+left join votes_proposal b 
+on a.delegator_address = b.voter
+left join osmosis.core.fact_validators c 
+on a.validator_address = c.address 
+left join osmosis.core.fact_validators cc 
+on a.redelegate_source_validator_address = cc.address 
+left join val_votes d 
+on a.validator_address = d.address 
+left join val_votes e 
+on a.redelegate_source_validator_address = d.address 
+where cc.label =  '"""+str(validator_choice) +"""'
+group by 
+delegator_address, 
+vote,
+redelegated_from,
+redelegated_to,
+redelegated_from_label,
+redelegated_from_rank,
+redelegated_to_label,
+redelegated_to_rank, 
+validator_redelegated_from_vote,
+validator_redelegated_to_vote
+)
+select * from all_votes_per_proposal_and_validator"""
+
+results5 = compute(sql5)
+df5 = pd.DataFrame(results5.records)
+df5.info()
+
+st.text("")
+st.subheader("Redelegations to the selected validator")
+st.text("")
+st.markdown("We previously showed how users redelegating from the selected validator behaved. Now we can do the same exercise but the other way around. We can see how votes coming from other validators to the selected one behave, and see if it is coherent with the previous result.")
+st.text("")
+
+
+if df5.empty:
+    st.markdown("There were no redelegations to the selected validator and proposal ID")
+else: 
+    
+    
+    df5_1 = df5.groupby(by=['redelegated_to_label','validator_redelegated_to_vote']).sum().reset_index(drop=False)
+    df5_2 = df5.groupby(by=['redelegated_to_label','vote']).sum().reset_index(drop=False)
+
+    fig1 = px.bar(df5_1, x="redelegated_to_label", y="total_amount", color="validator_redelegated_to_vote", color_discrete_sequence=px.colors.qualitative.Vivid)
+    fig1.update_layout(
+    title="Selected proposal and validator - Vote choice and amount redelegated to other validators - Destination validator voting choice",
+    xaxis_title="Validator redelegated from",
+    yaxis_title="Amount (OSMO)",
+    legend_title="Destination validator choice",
+    xaxis_tickfont_size=14,
+    yaxis_tickfont_size=14,
+    bargap=0.15, # gap between bars of adjacent location coordinates.
+    bargroupgap=0.1 # gap between bars of the same location coordinate.
+    )
+    st.plotly_chart(fig1, theme="streamlit", use_container_width=True)
+    st.text("")
+    st.markdown("Apart from this, we can also display how individual delegators who redelegated to the validators displayed above voted. Thus, the following chart displays the same numbers as the chart above, but differenciating by delegators votes. This will allow any validator using this dashboard to see whether they believe their voting option influenced somehow their delegators or if the reason for redelegations seems to be a different one. ")
+    st.text("") 
+    
+    fig1 = px.bar(df5_2, x="redelegated_to_label", y="total_amount", color="vote", color_discrete_sequence=px.colors.qualitative.Vivid)
+    fig1.update_layout(
+    title="Selected proposal and validator - Vote choice and amount redelegated to other validators - Redelegator voting choice",
+    xaxis_title="Validator redelegated from",
+    yaxis_title="Amount (OSMO)",
+    legend_title="Redelegator choice",
+    xaxis_tickfont_size=14,
+    yaxis_tickfont_size=14,
+    bargap=0.15, # gap between bars of adjacent location coordinates.
+    bargroupgap=0.1 # gap between bars of the same location coordinate.
+    )
+    st.plotly_chart(fig1, theme="streamlit", use_container_width=True)
+    st.text("")
+    st.markdown("Below I have also displayed the individual values which account for the previous charts, in case any further analysis is desired.")
+    st.text("")
+    st.text("")
+    st.dataframe(df4) 
 
 st.subheader('Conclusions')
 st.markdown('**Osmosis Governance** blabla.')
