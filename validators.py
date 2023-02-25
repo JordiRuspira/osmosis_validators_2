@@ -93,7 +93,7 @@ results1 = compute(sql1)
 df1 = pd.DataFrame(results1.records)
 df1.info()
 
-results1 = compute(sql2)
+results2 = compute(sql2)
 df2 = pd.DataFrame(results2.records)
 df2.info()
 
