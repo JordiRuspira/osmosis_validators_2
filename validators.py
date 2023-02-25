@@ -104,26 +104,174 @@ import math
 
 
 st.subheader('Selecting a proposal ID')
-st.write('We can see how validators voted on the selected proposal, ordered by rank and voting option.') 
-st.write('')
+
  
 proposal_choice = '427'
 proposal_choice = st.selectbox("Select a proposal", options = df1['proposal_id'].unique() ) 
+
+st.write('We can see how validators voted on the selected proposal, ordered by rank and voting option.') 
+st.write('')
+
 df0_fil = df0[df0['proposal_id'] == proposal_choice]
 
+tab1, tab2 = st.tabs(["Validator vote for the selceted proposal", "Delegator vote and quorum if meeted"])
 
-fig1 = px.bar(df0_fil, x="label", y="value", color="description", color_discrete_sequence=px.colors.qualitative.Vivid)
-fig1.update_layout(
+with tab1:
+    st.plotly_chart(fig1, theme="streamlit", use_container_width=True)
+
+    fig1 = px.bar(df0_fil, x="label", y="value", color="description", color_discrete_sequence=px.colors.qualitative.Vivid)
+        fig1.update_layout(
     title='Validator voting choice for selected proposal',
     xaxis_tickfont_size=14,
     yaxis_tickfont_size=14,
     bargap=0.15, # gap between bars of adjacent location coordinates.
     bargroupgap=0.1 # gap between bars of the same location coordinate.
+    )
+    st.plotly_chart(fig1, theme="streamlit", use_container_width=True)
+
+with tab2:
+    df_query_aux2 ="""
+   with votes_times as 
+(select proposal_id, max(date_trunc('day', block_timestamp)) as date 
+ from osmosis.core.fact_governance_votes
+ where tx_succeeded = 'TRUE'
+ and proposal_id =  '"""
+
+    sql6 = df_query_aux2 + str(proposal_choice) + """'
+group by proposal_id ),  
+   
+    
+votes_proposal_aux as (
+select voter, proposal_id, vote_option, rank() over (partition by voter, proposal_id order by block_timestamp desc) as rank
+from osmosis.core.fact_governance_votes
+where tx_succeeded = 'TRUE'
+and proposal_id in (select proposal_id from votes_times)
+), 
+votes_proposal as 
+(select voter, 
+proposal_id,
+b.description
+from votes_proposal_aux a 
+left join osmosis.core.dim_vote_options b 
+on a.vote_option = b.vote_id
+where a.rank = 1
+and proposal_id in (select proposal_id from votes_times)
+),
+delegations as (
+select date_trunc('day', block_timestamp) as date,
+delegator_address,
+validator_address,
+sum(amount/pow(10, decimal)) as amount 
+from osmosis.core.fact_staking
+where tx_succeeded = 'TRUE' 
+and action = 'delegate'
+and date_trunc('day', block_timestamp) <= (select date from votes_times)
+group by date, delegator_address, validator_address
+),
+undelegations as (
+select date_trunc('day', block_timestamp) as date,
+delegator_address,
+validator_address,
+sum(amount/pow(10, decimal))*(-1) as amount 
+from osmosis.core.fact_staking
+where tx_succeeded = 'TRUE' 
+and action = 'undelegate'
+and date_trunc('day', block_timestamp) <= (select date from votes_times)
+group by date, delegator_address, validator_address
+),
+redelegations_to as 
+(
+select date_trunc('day', block_timestamp) as date,
+delegator_address,
+validator_address,
+sum(amount/pow(10, decimal)) as amount 
+from osmosis.core.fact_staking
+where tx_succeeded = 'TRUE' 
+and action = 'redelegate'
+and date_trunc('day', block_timestamp) <= (select date from votes_times)
+group by date, delegator_address, validator_address
+),
+redelegations_from as 
+(
+select date_trunc('day', block_timestamp) as date,
+delegator_address,
+redelegate_source_validator_address as validator_address,
+sum(amount/pow(10, decimal))*(-1) as amount 
+from osmosis.core.fact_staking
+where tx_succeeded = 'TRUE' 
+and action = 'redelegate'
+and date_trunc('day', block_timestamp) <= (select date from votes_times)
+group by date, delegator_address, redelegate_source_validator_address
+),
+
+total_amount_staked as (
+select    
+sum(amount) as total_amount
+from (
+  select * from delegations
+  union all 
+  select * from undelegations 
+  union all 
+  select * from redelegations_to 
+  union all 
+  select * from redelegations_from
+  ) a 
+),
+
+total_amount_staked_voters as (
+select delegator_address, description,
+sum(amount) as total_amount
+from (
+  select * from delegations
+  union all 
+  select * from undelegations 
+  union all 
+  select * from redelegations_to 
+  union all 
+  select * from redelegations_from
+  ) a 
+left join votes_proposal b 
+on a.delegator_address = b.voter
+group by delegator_address, description
 )
-st.plotly_chart(fig1, theme="streamlit", use_container_width=True)
 
-
-
+select case when description is null then 'Did not vote'
+else 'Voted' end as casuistic, 
+count(distinct delegator_address) as num_addresses,
+sum(a.total_amount) as total_amount_group,
+b.total_amount, 
+(total_amount_group/b.total_amount)*100 as percentage
+from total_amount_staked_voters a 
+join total_amount_staked b 
+group by casuistic, b.total_amount
+   """
+   results6 = compute(sql6)
+   df6 = pd.DataFrame(results6.records)
+   df6.info()
+   
+   fig1 = px.bar(df6, x="casuistic", y="percentage", color_discrete_sequence=px.colors.qualitative.Vivid)
+   fig1.update_layout(
+   title="Selected proposal and delegator total percentage",
+   xaxis_title="Vote/did not vote",
+   yaxis_title="Percentage of total staked at the time", 
+   xaxis_tickfont_size=14,
+   yaxis_tickfont_size=14,
+   bargap=0.15, # gap between bars of adjacent location coordinates.
+   bargroupgap=0.1 # gap between bars of the same location coordinate.
+   )
+   st.plotly_chart(fig1, theme="streamlit", use_container_width=True)
+   
+   fig1 = px.bar(df6, x="casuistic", y="total_amount_group", color_discrete_sequence=px.colors.qualitative.Vivid)
+   fig1.update_layout(
+   title="Selected proposal and delegator votes",
+   xaxis_title="Vote/did not vote",
+   yaxis_title="Amount (OSMO) staked", 
+   xaxis_tickfont_size=14,
+   yaxis_tickfont_size=14,
+   bargap=0.15, # gap between bars of adjacent location coordinates.
+   bargroupgap=0.1 # gap between bars of the same location coordinate.
+   )
+   st.plotly_chart(fig1, theme="streamlit", use_container_width=True)   
 # In[43]:
 
 
