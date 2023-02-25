@@ -117,7 +117,7 @@ df0_fil = df0[df0['proposal_id'] == proposal_choice]
 tab1, tab2 = st.tabs(["Validator vote for the selceted proposal", "Delegator vote and quorum if meeted"])
 
 with tab1:
-    st.plotly_chart(fig1, theme="streamlit", use_container_width=True)
+    
 
     fig1 = px.bar(df0_fil, x="label", y="value", color="description", color_discrete_sequence=px.colors.qualitative.Vivid)
     fig1.update_layout(
