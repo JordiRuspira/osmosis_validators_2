@@ -249,7 +249,9 @@ group by casuistic, b.total_amount
     results6 = compute(sql6)
     df6 = pd.DataFrame(results6.records)
     df6.info()
-   
+    
+    col1, col2 = st.columns(2) 
+    
     fig1 = px.bar(df6, x="casuistic", y="percentage", color_discrete_sequence=px.colors.qualitative.Vivid)
     fig1.update_layout(
     title="Selected proposal and delegator total percentage",
@@ -260,7 +262,7 @@ group by casuistic, b.total_amount
     bargap=0.15, # gap between bars of adjacent location coordinates.
     bargroupgap=0.1 # gap between bars of the same location coordinate.
     )
-    st.plotly_chart(fig1, theme="streamlit", use_container_width=True)
+    col1.plotly_chart(fig1, theme="streamlit", use_container_width=True)
    
     fig1 = px.bar(df6, x="casuistic", y="total_amount_group", color_discrete_sequence=px.colors.qualitative.Vivid)
     fig1.update_layout(
@@ -272,7 +274,7 @@ group by casuistic, b.total_amount
     bargap=0.15, # gap between bars of adjacent location coordinates.
     bargroupgap=0.1 # gap between bars of the same location coordinate.
     )
-    st.plotly_chart(fig1, theme="streamlit", use_container_width=True)   
+    col2.plotly_chart(fig1, theme="streamlit", use_container_width=True)   
 # In[43]:
 
 
