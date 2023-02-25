@@ -109,7 +109,7 @@ st.write('')
  
 proposal_choice = '427'
 proposal_choice = st.selectbox("Select a proposal", options = df1['proposal_id'].unique() ) 
-df0_fil = df0[df0['proposal_id'] == str(proposal_choice)]
+df0_fil = df0[df0['proposal_id'] == proposal_choice]
 
 
 fig1 = px.bar(df0_fil, x="label", y="value", color="description", color_discrete_sequence=px.colors.qualitative.Vivid)
@@ -181,18 +181,8 @@ validator_choice = st.selectbox("Select a validator", options = df2['label'].uni
 
 
 st.subheader('Conclusions')
-st.markdown('**Near Protocol** has been doing good things over the past year, growing fast in web3 sector. It is clear that it is one of hte most interesting protocol deditacted to this sector to take into account for the upcoming years.')
+st.markdown('**Osmosis Governance** blabla.')
 st.markdown('The most interesting things we have found are:')
-st.write('- 2k developers joined NEAR Protocol so far, being the major of them active in 2022')
-st.write('- More than 50% of github Repos and almost 50% of PRs were created during 2022')
-st.write('- Developers activity has been stable over time showing less activity during weekend')
-st.write('- There have been more active contributors than members, or collaborators.')
-st.write('- All of them increased in both number and activity over 2022')
-st.write('- There are more one-time and part-time job users than full-time. But all of them have similar contributions.')
-st.write('- There has been ~10% developer retention over the past month (29/300).')
-st.write('- The major of developers stay active less than a month but there are almost 200 being active for more than 6 months.')
-st.write('')
-st.markdown('This app has been done by **_Adrià Parcerisas_**, a PhD Biomedical Engineer related to Machine Learning and Artificial intelligence technical projects for data analysis and research, as well as dive deep on-chain data analysis about cryptocurrency projects. You can find me on [Twitter](https://twitter.com/adriaparcerisas)')
-st.write('')
-st.markdown('The full sources used to develop this app can be found to the following link: [Github link](https://github.com/adriaparcerisas/Near-developer-activity)')
-st.markdown('_Powered by [Flipside Crypto](https://flipsidecrypto.xyz) and [MetricsDAO](https://metricsdao.notion.site)_')
+st.write('- Blah')
+ 
+ 
