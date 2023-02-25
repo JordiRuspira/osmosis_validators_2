@@ -120,7 +120,7 @@ with tab1:
     st.plotly_chart(fig1, theme="streamlit", use_container_width=True)
 
     fig1 = px.bar(df0_fil, x="label", y="value", color="description", color_discrete_sequence=px.colors.qualitative.Vivid)
-        fig1.update_layout(
+    fig1.update_layout(
     title='Validator voting choice for selected proposal',
     xaxis_tickfont_size=14,
     yaxis_tickfont_size=14,
