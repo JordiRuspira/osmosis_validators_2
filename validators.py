@@ -771,7 +771,7 @@ with tab2:
     select * from all_votes_per_proposal_and_validator"""
 
     st.experimental_memo(ttl=1000000)
-    @st.cache_data
+    @st.experimental_memo
     def compute_4(a):
         results=sdk.query(a)
         return results
