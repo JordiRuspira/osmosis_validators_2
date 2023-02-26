@@ -114,6 +114,8 @@ st.write('We can see how validators voted on the selected proposal, ordered by r
 st.write('')
 
 @st.cache_data
+
+
 df0_fil = df0[df0['proposal_id'] == proposal_choice]
 
 tab1, tab2 = st.tabs(["Validator vote for the selceted proposal", "Delegator vote and quorum if meeted"])
