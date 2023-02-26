@@ -948,6 +948,135 @@ with tab3:
         group by 
     delegator_address, 
     vote,
+sql7 = df_query_aux2 + str(proposal_choice) +"""'
+    group by proposal_id
+    ),
+    -- This part is done to drop later all duplicate votes
+    votes_proposal_aux as (
+    select voter, proposal_id, vote_option, rank() over (partition by voter, proposal_id order by block_timestamp desc) as rank
+    from osmosis.core.fact_governance_votes
+    where tx_succeeded = 'TRUE'
+    and proposal_id =  '"""+ str(proposal_choice)+"""'
+    ),
+    votes_proposal as 
+    (select voter, 
+    proposal_id,
+    b.description
+    from votes_proposal_aux a 
+    left join osmosis.core.dim_vote_options b 
+    on a.vote_option = b.vote_id
+    where a.rank = 1
+    and proposal_id =  '"""+str(proposal_choice) +"""'
+    ),
+    
+    
+    delegations as (
+    select date_trunc('day', block_timestamp) as date,
+    delegator_address,
+    validator_address,
+    sum(amount/pow(10, decimal)) as amount 
+    from osmosis.core.fact_staking
+    where tx_succeeded = 'TRUE' 
+    and action = 'delegate'
+    and date_trunc('day', block_timestamp) <= (select date from votes_times)
+    group by date, delegator_address, validator_address
+    ),
+
+    undelegations as (
+    select date_trunc('day', block_timestamp) as date,
+    delegator_address,
+    validator_address,
+    sum(amount/pow(10, decimal))*(-1) as amount 
+    from osmosis.core.fact_staking
+    where tx_succeeded = 'TRUE' 
+    and action = 'undelegate'
+    and date_trunc('day', block_timestamp) <= (select date from votes_times)
+    group by date, delegator_address, validator_address
+    ),
+
+redelegations_to as 
+(
+select date_trunc('day', block_timestamp) as date,
+delegator_address,
+validator_address,
+sum(amount/pow(10, decimal)) as amount 
+from osmosis.core.fact_staking
+where tx_succeeded = 'TRUE' 
+and action = 'redelegate'
+and date_trunc('day', block_timestamp) <= (select date from votes_times)
+group by date, delegator_address, validator_address
+
+),
+
+redelegations_from as 
+(
+select date_trunc('day', block_timestamp) as date,
+delegator_address,
+redelegate_source_validator_address as validator_address,
+sum(amount/pow(10, decimal))*(-1) as amount 
+from osmosis.core.fact_staking
+where tx_succeeded = 'TRUE' 
+and action = 'redelegate'
+and date_trunc('day', block_timestamp) <= (select date from votes_times)
+group by date, delegator_address, redelegate_source_validator_address
+
+),
+    validators_address as (
+    select address, label, raw_metadata:"account_address" as account_address
+    from osmosis.core.fact_validators 
+    ),
+    val_votes_aux as 
+    (
+    select voter, 
+    proposal_id, 
+    b.description, 
+    rank() over (partition by voter, proposal_id order by block_timestamp desc) as rank
+    from osmosis.core.fact_governance_votes a 
+    left join osmosis.core.dim_vote_options b 
+    on a.vote_option = b.vote_id
+    where voter in (select distinct account_address from validators_address)
+    and proposal_id =  '"""+str(proposal_choice) +"""'
+    and tx_succeeded = 'TRUE'
+    ),
+    val_votes as (
+    select voter, b.address, proposal_id, description from val_votes_aux a
+    left join validators_address b 
+    on a.voter = b.account_address
+    where rank = 1 
+    ),
+    
+    all_votes_per_proposal_and_validator as 
+    (
+
+    select 
+    delegator_address, 
+    case when b.voter is null then 'Did not vote'
+    else b.description end as vote, 
+    validator_address, 
+    c.label, 
+    c.rank,
+    case when d.description is null then 'Did not vote'
+    else d.description end as validator_vote,
+    sum(amount) as total_amount
+    from (
+      select * from delegations
+      union all 
+      select * from undelegations 
+      union all 
+      select * from redelegations_to 
+      union all 
+      select * from redelegations_from
+      ) a 
+    left join votes_proposal b 
+    on a.delegator_address = b.voter
+    left join osmosis.core.fact_validators c 
+    on a.validator_address = c.address 
+    left join val_votes d 
+    on a.validator_address = d.address  
+    where c.label =  '"""+str(validator_choice) +"""'
+        group by 
+    delegator_address, 
+    vote,
     validator_address,
     c.label,
     c.rank,
