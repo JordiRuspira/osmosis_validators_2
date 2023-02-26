@@ -81,6 +81,7 @@ where rank <= 150
 
 st.experimental_memo(ttl=1000000)
 @st.cache
+@st.cache_data
 def compute(a):
     results=sdk.query(a)
     return results
@@ -112,6 +113,7 @@ proposal_choice = st.selectbox("Select a proposal", options = df1['proposal_id']
 st.write('We can see how validators voted on the selected proposal, ordered by rank and voting option.') 
 st.write('')
 
+@st.cache_data
 df0_fil = df0[df0['proposal_id'] == proposal_choice]
 
 tab1, tab2 = st.tabs(["Validator vote for the selceted proposal", "Delegator vote and quorum if meeted"])
@@ -245,7 +247,8 @@ from total_amount_staked_voters a
 join total_amount_staked b 
 group by casuistic, b.total_amount
    """
-    
+   
+    @st.cache_data
     results6 = compute(sql6)
     df6 = pd.DataFrame(results6.records)
     df6.info()
@@ -469,6 +472,7 @@ group by validator_vote,
 vote
 """
 
+@st.cache_data
 results3 = compute(sql3)
 df3 = pd.DataFrame(results3.records)
 df3.info()
@@ -582,6 +586,8 @@ validator_redelegated_from_vote,
 validator_redelegated_to_vote
 )
 select * from all_votes_per_proposal_and_validator"""
+
+@st.cache_data
 results4 = compute(sql4)
 df4 = pd.DataFrame(results4.records)
 df4.info()
@@ -733,6 +739,7 @@ validator_redelegated_to_vote
 )
 select * from all_votes_per_proposal_and_validator"""
 
+@st.cache_data
 results5 = compute(sql5)
 df5 = pd.DataFrame(results5.records)
 df5.info()
