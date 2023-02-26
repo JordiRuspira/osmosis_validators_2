@@ -819,8 +819,8 @@ with tab3:
 
  
    
-url = 'https://raw.githubusercontent.com/JordiRuspira/osmosis_validators_2/edit/main/allvotes.csv'
-df_allvotes = pd.read_csv(url)
+ 
+df_allvotes = pd.read_csv('allvotes.csv')
 
 
 st.subheader('Conclusions')
