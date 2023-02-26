@@ -109,7 +109,7 @@ st.write('')
 
 df0_fil = df0[df0['proposal_id'] == proposal_choice]
 
-tab1, tab2 = st.tabs(["Validator vote for the selceted proposal", "Delegator vote and quorum if meeted"])
+tab1, tab2, tab3 = st.tabs(["Validator vote for the selceted proposal", "Delegator vote and quorum if meeted", "Historical quorum"])
 
 # In[7]:
 
@@ -277,7 +277,26 @@ group by casuistic, b.total_amount
     bargroupgap=0.1 # gap between bars of the same location coordinate.
     )
     col2.plotly_chart(fig1, theme="streamlit", use_container_width=True)   
+    
+# In[8]:
+with tab3:
+    df_allvotes = pd.read_csv('allvotes.csv')
+    df_allvotes_filtered = df_allvotes[df_allvotes['casuistic'] == 'Voted']
+    df_allvotes_filtered = df_allvotes_filtered.sort_values(by ='proposal_id', ascending = True)
 
+    fig1 = px.bar(df_allvotes_filtered, x="proposal_id", y="percentage", color_discrete_sequence=px.colors.qualitative.Vivid)
+    fig1.update_layout(
+    title="Historical quorum if only delegators voted",
+    xaxis_title="Proposal ID",
+    yaxis_title="Percentage over total amount staked", 
+    xaxis_tickfont_size=14,
+    yaxis_tickfont_size=14,
+    bargap=0.15, # gap between bars of adjacent location coordinates.
+    bargroupgap=0.1 # gap between bars of the same location coordinate.
+    )
+    st.plotly_chart(fig1, theme="streamlit", use_container_width=True)  
+    
+    
 # In[8]:
 
 
@@ -820,7 +839,6 @@ with tab3:
  
    
  
-df_allvotes = pd.read_csv('allvotes.csv')
 
 
 st.subheader('Conclusions')
