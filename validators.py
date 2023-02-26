@@ -248,8 +248,7 @@ from total_amount_staked_voters a
 join total_amount_staked b 
 group by casuistic, b.total_amount
    """
-   
-    @st.cache_data
+    
     results6 = compute(sql6)
     df6 = pd.DataFrame(results6.records)
     df6.info()
@@ -472,8 +471,7 @@ from all_votes_per_proposal_and_validator
 group by validator_vote,
 vote
 """
-
-@st.cache_data
+ 
 results3 = compute(sql3)
 df3 = pd.DataFrame(results3.records)
 df3.info()
@@ -587,8 +585,7 @@ validator_redelegated_from_vote,
 validator_redelegated_to_vote
 )
 select * from all_votes_per_proposal_and_validator"""
-
-@st.cache_data
+ 
 results4 = compute(sql4)
 df4 = pd.DataFrame(results4.records)
 df4.info()
@@ -739,8 +736,7 @@ validator_redelegated_from_vote,
 validator_redelegated_to_vote
 )
 select * from all_votes_per_proposal_and_validator"""
-
-@st.cache_data
+ 
 results5 = compute(sql5)
 df5 = pd.DataFrame(results5.records)
 df5.info()
