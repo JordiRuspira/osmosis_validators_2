@@ -295,9 +295,9 @@ with tab3:
     bargroupgap=0.1 # gap between bars of the same location coordinate.
     )
     fig1.add_shape(type='line',x0=0,
-                y0=40,
-                x1=8,
-                y1=40,
+                y0=20,
+                x1=430,
+                y1=20,
                 line=dict(color='Red',),
                 xref='x',
                 yref='y'
