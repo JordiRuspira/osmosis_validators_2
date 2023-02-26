@@ -296,9 +296,7 @@ with tab3:
     )
     fig1.add_shape(type='line',
                   y = 20,
-                line=dict(color='Red',),
-                xref='x',
-                yref='y'
+                line=dict(color='Red')
      )
     st.plotly_chart(fig1, theme="streamlit", use_container_width=True)  
     
