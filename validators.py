@@ -328,7 +328,15 @@ st.write('')
 validator_choice = 'Stakecito'
 validator_choice = st.selectbox("Select a validator", options = df2['label'].unique() ) 
 
+# In[11]:
 
+st.experimental_memo(ttl=1000000)
+@st.cache
+def compute(a):
+    results=sdk.query(a)
+    return results
+
+  
 df_query_aux2 ="""
 with votes_times as 
 (select proposal_id, max(date_trunc('day', block_timestamp)) as date 
