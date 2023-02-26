@@ -78,7 +78,7 @@ where rank <= 150
 
 
 st.experimental_memo(ttl=1000000)
-@st.cache_data
+@st.experimental_memo
 def compute(a):
     results=sdk.query(a)
     return results
@@ -243,7 +243,8 @@ join total_amount_staked b
 group by casuistic, b.total_amount
    """
    
-    @st.cache_data
+    st.experimental_memo(ttl=1000000)
+    @st.experimental_memo
     def compute_1(a):
         results=sdk.query(a)
         return results
@@ -614,7 +615,7 @@ with tab1:
   
   
     st.experimental_memo(ttl=1000000)
-    @st.cache_data
+    @st.experimental_memo
     def compute_3(a):
         results=sdk.query(a)
         return results
@@ -771,7 +772,7 @@ with tab2:
     select * from all_votes_per_proposal_and_validator"""
 
     st.experimental_memo(ttl=1000000)
-    @st.cache_data
+    @st.experimental_memo
     def compute_4(a):
         results=sdk.query(a)
         return results
@@ -828,7 +829,7 @@ with tab2:
 with tab3: 
  
     st.experimental_memo(ttl=1000000)
-    @st.cache_data
+    @st.experimental_memo
     def compute_6(a):
         results=sdk.query(a)
         return results
@@ -1029,7 +1030,7 @@ group by date, delegator_address, redelegate_source_validator_address
 with tab4: 
  
     st.experimental_memo(ttl=1000000)
-    @st.cache_data
+    @st.experimental_memo
     def compute_5(a):
         results=sdk.query(a)
         return results
