@@ -296,7 +296,7 @@ with tab3:
     )
     fig1.add_shape(type='line',x0=0,
                 y0=20,
-                x1=430,
+                x1=450,
                 y1=20,
                 line=dict(color='Red',),
                 xref='x',
