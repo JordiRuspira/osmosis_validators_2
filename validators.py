@@ -799,10 +799,6 @@ with tab2:
         )
         st.plotly_chart(fig1, theme="streamlit", use_container_width=True)
         st.text("")
-        st.markdown("Below I have also displayed the individual values which account for the previous charts, in case any further analysis is desired.")
-        st.text("")
-        st.text("")
-        st.dataframe(df4) 
         
 # In[13]: 
 with tab3: 
