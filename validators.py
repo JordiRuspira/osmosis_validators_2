@@ -109,7 +109,7 @@ st.write('')
 
 df0_fil = df0[df0['proposal_id'] == proposal_choice]
 
-tab1, tab2, tab3 = st.tabs(["Validator vote for the selceted proposal", "Delegator vote and quorum if meeted", "Historical quorum"])
+tab1, tab2, tab3 = st.tabs(["Validator vote for the selceted proposal", "Delegator vote and quorum if meeted", "Historical turnout"])
 
 # In[7]:
 
@@ -286,7 +286,7 @@ with tab3:
 
     fig1 = px.bar(df_allvotes_filtered, x="proposal_id", y="percentage", color_discrete_sequence=px.colors.qualitative.Vivid)
     fig1.update_layout(
-    title="Historical quorum if only delegators voted",
+    title="Historical turnout if only delegators voted",
     xaxis_title="Proposal ID",
     yaxis_title="Percentage over total amount staked", 
     xaxis_tickfont_size=14,
@@ -294,6 +294,12 @@ with tab3:
     bargap=0.15, # gap between bars of adjacent location coordinates.
     bargroupgap=0.1 # gap between bars of the same location coordinate.
     )
+    fig1.add_shape(type='line',
+                  y = 20,
+                line=dict(color='Red',),
+                xref='x',
+                yref='y'
+     )
     st.plotly_chart(fig1, theme="streamlit", use_container_width=True)  
     
     
