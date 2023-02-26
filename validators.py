@@ -15,9 +15,7 @@ import matplotlib.ticker as ticker
 import numpy as np
 import plotly.express as px
 sdk = ShroomDK("3b5afbf4-3004-433c-9b04-2e867026718b")
-st.cache(suppress_st_warning=True)
-st.cache_data(suppress_st_warning=True)
-
+st.cache(suppress_st_warning=True)  
 st.set_page_config(page_title=":atom_symbol: Osmosis Governance :atom_symbol:", layout="wide",initial_sidebar_state="collapsed")
 st.title('Osmosis Governance')
 
