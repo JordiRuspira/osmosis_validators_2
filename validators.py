@@ -78,7 +78,6 @@ where rank <= 150
 
 
 st.experimental_memo(ttl=1000000)
-@st.cache
 @st.cache_data
 def compute(a):
     results=sdk.query(a)
@@ -243,8 +242,13 @@ from total_amount_staked_voters a
 join total_amount_staked b 
 group by casuistic, b.total_amount
    """
-    
-    results6 = compute(sql6)
+   
+    @st.cache_data
+    def compute_1(a):
+        results=sdk.query(a)
+        return results
+      
+    results6 = compute_1(sql6)
     df6 = pd.DataFrame(results6.records)
     df6.info()
     
@@ -328,11 +332,8 @@ validator_choice = st.selectbox("Select a validator", options = df2['label'].uni
 
 # In[9]:
 
-st.experimental_memo(ttl=1000000)
-@st.cache
-def compute(a):
-    results=sdk.query(a)
-    return results
+
+       
 
   
 df_query_aux2 ="""
@@ -584,8 +585,15 @@ with tab1:
     validator_redelegated_to_vote
     )
     select * from all_votes_per_proposal_and_validator"""
-
-    results4 = compute(sql4)
+  
+  
+    st.experimental_memo(ttl=1000000)
+    @st.cache_data
+    def compute_3(a):
+        results=sdk.query(a)
+        return results
+      
+    results4 = compute_3(sql4)
     df4 = pd.DataFrame(results4.records)
     df4.info()
 
@@ -738,11 +746,12 @@ with tab2:
     select * from all_votes_per_proposal_and_validator"""
 
     st.experimental_memo(ttl=1000000)
-    @st.cache
-    def compute(a):
+    @st.cache_data
+    def compute_4(a):
         results=sdk.query(a)
         return results
-    results5 = compute(sql5)
+      
+    results5 = compute_4(sql5)
     df5 = pd.DataFrame(results5.records)
     df5.info()
 
@@ -799,12 +808,12 @@ with tab2:
 with tab3: 
  
     st.experimental_memo(ttl=1000000)
-    @st.cache
-    def compute(a):
+    @st.cache_data
+    def compute_5(a):
         results=sdk.query(a)
         return results
 
-    results3 = compute(sql3)
+    results3 = compute_5(sql3)
     df3 = pd.DataFrame(results3.records)
     df3.info()
     st.dataframe(df3) 
