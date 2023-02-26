@@ -17,23 +17,21 @@ import plotly.express as px
 sdk = ShroomDK("3b5afbf4-3004-433c-9b04-2e867026718b")
 st.cache(suppress_st_warning=True)  
 st.set_page_config(page_title=":atom_symbol: Osmosis Governance :atom_symbol:", layout="wide",initial_sidebar_state="collapsed")
+
+# In[2]:
 st.title('Osmosis Governance')
 
-
-
-# In[20]:
-
-
-st.markdown('The goal of this dashboard for validators to have a better understanding and insights of how their voting options impacts on their delegators.')
-
-st.markdown('How to use this tool: you can select a proposal ID on Osmosis and a Validator, and it will give you insights on how delegators behaved after the proposal.')
-
-st.markdown('When you select a proposal ID, the numbers displayed show movement between the go live of the proposal and 7 days after the ending of the vote.')
+# In[3]:
+st.markdown('Governance and validator power is a recurrent topic when talking about delegated proof of stake blockchains. This dashboard and tool pretends show how users behave with respect to the validators they are delegating to, as well as how governance would be without a delegated PoS system, just a proof of stake one. Therefore, this dashboard should help validators have a better understanding and insights of how their voting options impacts on their delegators.')
+st.markdown('This dashboard is structured as follows:')
+st.write('- First off, you should select a proposal ID to inspect how that specific proposal went.')
+st.write('- You then are presented with three tabs. The first one is just an overview of how individual validators voted on that proposal. The second one allows you to see in big numbers how delegators voted and the quorum it would have reached if only their vote counted (over total percentage of Osmo staked). The last tab in this section allows for users to see this data for all proposals already voted. Spoiler: almost no proposal would have reached quorum if it werent for the delegated proof of stake system.')
+st.write('- After this section come the insights for specific validators. Once a proposal ID has been selected in the previous section, you should choose a validator from the select box to see how delegators reacted for that validator and proposal. The numbers displayed here show movement between the go live of the proposal and 7 days after the ending of the vote. Again, there are multiple tabs to show different information.')
+st.markdown('If there`s any missing information or misleading one, please do not hesitate to reach out on twitter.')
 
  
 
-# In[10]:
-
+# In[4]:
 sql0 = f"""
 with votes_times as 
 (select proposal_id, max(date_trunc('day', block_timestamp)) as date 
@@ -76,7 +74,7 @@ where rank <= 150
 
 """
 
-# In[11]:
+# In[5]:
 
 
 st.experimental_memo(ttl=1000000)
@@ -99,14 +97,11 @@ df2 = pd.DataFrame(results2.records)
 df2.info()
 
 
-# In[22]:
+# In[6]:
 
 import math
-
-
 st.subheader('Selecting a proposal ID')
 
- 
 proposal_choice = '427'
 proposal_choice = st.selectbox("Select a proposal", options = df1['proposal_id'].unique() ) 
 
@@ -116,6 +111,8 @@ st.write('')
 df0_fil = df0[df0['proposal_id'] == proposal_choice]
 
 tab1, tab2 = st.tabs(["Validator vote for the selceted proposal", "Delegator vote and quorum if meeted"])
+
+# In[7]:
 
 with tab1:
     
@@ -276,7 +273,8 @@ group by casuistic, b.total_amount
     bargroupgap=0.1 # gap between bars of the same location coordinate.
     )
     col2.plotly_chart(fig1, theme="streamlit", use_container_width=True)   
-# In[43]:
+
+# In[8]:
 
 
 st.markdown(""" <style> div.css-12w0qpk.e1tzin5v2{
@@ -328,7 +326,7 @@ st.write('')
 validator_choice = 'Stakecito'
 validator_choice = st.selectbox("Select a validator", options = df2['label'].unique() ) 
 
-# In[11]:
+# In[9]:
 
 st.experimental_memo(ttl=1000000)
 @st.cache
@@ -478,9 +476,10 @@ group by validator_vote,
 vote
 """
  
+# In[10]:
 tab1, tab2, tab3 = st.tabs(["Redelegations from the selected validator", "Redelegations to the selected validator","Table data"])
 
-
+# In[11]:
 with tab1:
  
     st.markdown("We can display how users behaved. For instance, we can first look at how many redelegations there were from the selected validator towards other validators, and what option did those validators vote.")
@@ -634,7 +633,7 @@ with tab1:
         st.text("")
         st.dataframe(df4) 
 
-
+# In[12]:
 with tab2:
  
     sql5 = df_query_aux2 + str(proposal_choice) +"""'
@@ -795,7 +794,8 @@ with tab2:
         st.text("")
         st.text("")
         st.dataframe(df4) 
- 
+        
+# In[13]: 
 with tab3: 
  
     st.experimental_memo(ttl=1000000)
