@@ -294,9 +294,13 @@ with tab3:
     bargap=0.15, # gap between bars of adjacent location coordinates.
     bargroupgap=0.1 # gap between bars of the same location coordinate.
     )
-    fig1.add_shape(type='line',
-                  y = 20,
-                line=dict(color='Red')
+    fig1.add_shape(type='line',x0=0,
+                y0=40,
+                x1=8,
+                y1=40,
+                line=dict(color='Red',),
+                xref='x',
+                yref='y'
      )
     st.plotly_chart(fig1, theme="streamlit", use_container_width=True)  
     
