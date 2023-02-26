@@ -482,7 +482,9 @@ tab1, tab2, tab3 = st.tabs(["Redelegations from the selected validator", "Redele
 
 
 with tab1:
-     
+ 
+    st.markdown("We can display how users behaved. For instance, we can first look at how many redelegations there were from the selected validator towards other validators, and what option did those validators vote.")
+ 
     sql4 = df_query_aux2 + str(proposal_choice) +"""'
     group by proposal_id
     ),
@@ -806,16 +808,12 @@ with tab3:
     df3 = pd.DataFrame(results3.records)
     df3.info()
     st.dataframe(df3) 
+    st.text("")
+    st.markdown("The way to read the table above is as follows. For the selected proposal ID and validator, we see first the validator vote, followed by the number of its delegators who voted for any proposal, if they voted, and the amount they account for of that specific delegator.")
+    st.text("")
 
-
-
-st.text("")
-st.markdown("The way to read the table above is as follows. For the selected proposal ID and validator, we see first the validator vote, followed by the number of its delegators who voted for any proposal, if they voted, and the amount they account for of that specific delegator.")
-st.text("")
-st.subheader("Redelegations from the selected validator")
-st.text("")
-st.markdown("We can display how users behaved. For instance, we can first look at how many redelegations there were from the selected validator towards other validators, and what option did those validators vote.")
-st.text("")  
+ 
+   
 
 
 
