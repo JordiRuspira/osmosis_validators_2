@@ -250,7 +250,6 @@ group by casuistic, b.total_amount
       
     results6 = compute_1(sql6)
     df6 = pd.DataFrame(results6.records)
-    df6.info()
     
     col1, col2 = st.columns(2) 
     
@@ -505,7 +504,7 @@ vote
 """
  
 # In[10]:
-tab1, tab2, tab3 = st.tabs(["Redelegations from the selected validator", "Redelegations to the selected validator","Table data"])
+tab1, tab2, tab3, tab4 = st.tabs(["Redelegations from the selected validator", "Redelegations to the selected validator","Delegators data","Additional data"])
 
 # In[11]:
 with tab1:
@@ -622,7 +621,6 @@ with tab1:
       
     results4 = compute_3(sql4)
     df4 = pd.DataFrame(results4.records)
-    df4.info()
 
 
 
@@ -780,7 +778,6 @@ with tab2:
       
     results5 = compute_4(sql5)
     df5 = pd.DataFrame(results5.records)
-    df5.info()
 
     st.text("")
     st.subheader("Redelegations to the selected validator")
@@ -826,9 +823,168 @@ with tab2:
         )
         st.plotly_chart(fig1, theme="streamlit", use_container_width=True)
         st.text("")
-        
+
 # In[13]: 
 with tab3: 
+ 
+    st.experimental_memo(ttl=1000000)
+    @st.cache_data
+    def compute_6(a):
+        results=sdk.query(a)
+        return results
+    
+    sql7 = df_query_aux2 + str(proposal_choice) +"""'
+    group by proposal_id
+    ),
+    -- This part is done to drop later all duplicate votes
+    votes_proposal_aux as (
+    select voter, proposal_id, vote_option, rank() over (partition by voter, proposal_id order by block_timestamp desc) as rank
+    from osmosis.core.fact_governance_votes
+    where tx_succeeded = 'TRUE'
+    and proposal_id =  '"""+ str(proposal_choice)+"""'
+    ),
+    votes_proposal as 
+    (select voter, 
+    proposal_id,
+    b.description
+    from votes_proposal_aux a 
+    left join osmosis.core.dim_vote_options b 
+    on a.vote_option = b.vote_id
+    where a.rank = 1
+    and proposal_id =  '"""+str(proposal_choice) +"""'
+    ),
+    redelegations as 
+    (
+    select date_trunc('day', block_timestamp) as date,
+    delegator_address,
+    validator_address,
+    redelegate_source_validator_address,
+    sum(amount/pow(10, decimal)) as amount 
+    from osmosis.core.fact_staking
+    where tx_succeeded = 'TRUE' 
+    and action = 'redelegate'
+    and date_trunc('day', block_timestamp) between to_date((select date from votes_times)) -5 and  to_date((select date from votes_times)) + 7
+    group by date, delegator_address, validator_address, REDELEGATE_SOURCE_VALIDATOR_ADDRESS
+    ),
+    validators_address as (
+    select address, label, raw_metadata:"account_address" as account_address
+    from osmosis.core.fact_validators 
+    ),
+    val_votes_aux as 
+    (
+    select voter, 
+    proposal_id, 
+    b.description, 
+    rank() over (partition by voter, proposal_id order by block_timestamp desc) as rank
+    from osmosis.core.fact_governance_votes a 
+    left join osmosis.core.dim_vote_options b 
+    on a.vote_option = b.vote_id
+    where voter in (select distinct account_address from validators_address)
+    and proposal_id =  '"""+str(proposal_choice) +"""'
+    and tx_succeeded = 'TRUE'
+    ),
+    val_votes as (
+    select voter, b.address, proposal_id, description from val_votes_aux a
+    left join validators_address b 
+    on a.voter = b.account_address
+    where rank = 1 
+    ),
+    all_votes_per_proposal_and_validator as 
+    (
+
+    select 
+    delegator_address, 
+    case when b.voter is null then 'Did not vote'
+    else b.description end as vote, 
+    validator_address, 
+    c.label, 
+    c.rank,
+    case when d.description is null then 'Did not vote'
+    else d.description end as validator_vote,
+    sum(amount) as total_amount
+    from (
+      select * from delegations
+      union all 
+      select * from undelegations 
+      union all 
+      select * from redelegations_to 
+      union all 
+      select * from redelegations_from
+      ) a 
+    left join votes_proposal b 
+    on a.delegator_address = b.voter
+    left join osmosis.core.fact_validators c 
+    on a.validator_address = c.address 
+    left join val_votes d 
+    on a.validator_address = d.address  
+    where c.label =  '"""+str(validator_choice) +"""'
+        group by 
+    delegator_address, 
+    vote,
+    validator_address,
+    c.label,
+    c.rank,
+    validator_vote
+    )
+
+    select 
+    case when total_amount between 0 and 10 then 'Between 0 and 10' 
+    when total_amount between 10 and 50 then 'Between 10 and 50' 
+    when total_amount between 50 and 100 then 'Between 50 and 100' 
+    when total_amount between 100 and 500 then 'Between 100 and 500' 
+    when total_amount between 500 and 2000 then 'Between 500 and 2000' 
+    when total_amount between 2000 and 10000 then 'Between 2000 and 10000' 
+    when total_amount between 10000 and 50000 then 'Between 10000 and 50000' 
+    else 'More than 50000' end as grouped,
+    case when total_amount between 0 and 10 then 0 
+    when total_amount between 10 and 50 then 1 
+    when total_amount between 50 and 100 then 2 
+    when total_amount between 100 and 500 then 3 
+    when total_amount between 500 and 2000 then 4
+    when total_amount between 2000 and 10000 then 5 
+    when total_amount between 10000 and 50000 then 6 
+    else 7 end as grouped_numeric,
+    count(distinct delegator_address) as num_users,
+    sum(total_amount) as total_amount
+    from all_votes_per_proposal_and_validator 
+    where total_amount > 0
+    group by 1, 2 """
+
+    results7 = compute_6(sql7)
+    df7 = pd.DataFrame(results7.records)
+    df7 = df7.sort_values(by ='grouped_numeric', ascending = True)
+    
+    col1, col2 = st.columns(2) 
+    
+    fig1 = px.bar(df7, x="grouped", y="total_amount", color_discrete_sequence=px.colors.qualitative.Vivid)
+    fig1.update_layout(
+    title="Selected proposal and validator - delegation distribution",
+    xaxis_title="Category",
+    yaxis_title="Total amount staked by group (OSMO)", 
+    xaxis_tickfont_size=14,
+    yaxis_tickfont_size=14,
+    bargap=0.15, # gap between bars of adjacent location coordinates.
+    bargroupgap=0.1 # gap between bars of the same location coordinate.
+    )
+    col1.plotly_chart(fig1, theme="streamlit", use_container_width=True)
+    
+    fig1 = px.bar(df7, x="grouped", y="num_users", color_discrete_sequence=px.colors.qualitative.Vivid)
+    fig1.update_layout(
+    title="Selected proposal and validator - delegation distribution",
+    xaxis_title="Category",
+    yaxis_title="Number of users", 
+    xaxis_tickfont_size=14,
+    yaxis_tickfont_size=14,
+    bargap=0.15, # gap between bars of adjacent location coordinates.
+    bargroupgap=0.1 # gap between bars of the same location coordinate.
+    )
+    col2.plotly_chart(fig1, theme="streamlit", use_container_width=True)
+    
+        
+    
+    
+# In[13]: 
+with tab4: 
  
     st.experimental_memo(ttl=1000000)
     @st.cache_data
@@ -838,7 +994,6 @@ with tab3:
 
     results3 = compute_5(sql3)
     df3 = pd.DataFrame(results3.records)
-    df3.info()
     st.dataframe(df3) 
     st.text("")
     st.markdown("The way to read the table above is as follows. For the selected proposal ID and validator, we see first the validator vote, followed by the number of its delegators who voted for any proposal, if they voted, and the amount they account for of that specific delegator.")
