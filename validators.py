@@ -853,6 +853,32 @@ with tab3:
     where a.rank = 1
     and proposal_id =  '"""+str(proposal_choice) +"""'
     ),
+    
+    
+    delegations as (
+    select date_trunc('day', block_timestamp) as date,
+    delegator_address,
+    validator_address,
+    sum(amount/pow(10, decimal)) as amount 
+    from osmosis.core.fact_staking
+    where tx_succeeded = 'TRUE' 
+    and action = 'delegate'
+    and date_trunc('day', block_timestamp) <= (select date from votes_times)
+    group by date, delegator_address, validator_address
+    ),
+
+    undelegations as (
+    select date_trunc('day', block_timestamp) as date,
+    delegator_address,
+    validator_address,
+    sum(amount/pow(10, decimal))*(-1) as amount 
+    from osmosis.core.fact_staking
+    where tx_succeeded = 'TRUE' 
+    and action = 'undelegate'
+    and date_trunc('day', block_timestamp) <= (select date from votes_times)
+    group by date, delegator_address, validator_address
+    ),
+
     redelegations as 
     (
     select date_trunc('day', block_timestamp) as date,
@@ -889,6 +915,7 @@ with tab3:
     on a.voter = b.account_address
     where rank = 1 
     ),
+    
     all_votes_per_proposal_and_validator as 
     (
 
