@@ -601,7 +601,7 @@ with tab1:
 
 
     if df4.empty:
-        st.markdown("There were no redelegations from the selected validator and proposal ID")
+        st.error("There were no redelegations from the selected validator and proposal ID")
     else: 
 
         df4_1 = df4.groupby(by=['redelegated_from_label','validator_redelegated_from_vote']).sum().reset_index(drop=False)
@@ -763,7 +763,7 @@ with tab2:
 
 
     if df5.empty:
-        st.markdown("There were no redelegations to the selected validator and proposal ID")
+        st.error("There were no redelegations to the selected validator and proposal ID")
     else: 
 
 
