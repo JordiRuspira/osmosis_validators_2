@@ -478,6 +478,14 @@ group by validator_vote,
 vote
 """
  
+ 
+st.experimental_memo(ttl=1000000)
+@st.cache
+def compute(a):
+    results=sdk.query(a)
+    return results
+  
+  
 results3 = compute(sql3)
 df3 = pd.DataFrame(results3.records)
 df3.info()
@@ -743,6 +751,11 @@ validator_redelegated_to_vote
 )
 select * from all_votes_per_proposal_and_validator"""
  
+st.experimental_memo(ttl=1000000)
+@st.cache
+def compute(a):
+    results=sdk.query(a)
+    return results
 results5 = compute(sql5)
 df5 = pd.DataFrame(results5.records)
 df5.info()
