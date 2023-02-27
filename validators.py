@@ -1168,7 +1168,7 @@ and tx_from in (select distinct delegator_address from allvotesinfo )
 group by 1 
   )
 
-select mindate, count(distinct delegator_address) as num_delegators
+select mindate, count(distinct tx_from) as num_delegators
 from last_table
 group by 1 """
 
