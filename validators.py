@@ -835,7 +835,11 @@ with tab3:
         return results
     
  
-    sql7 = df_query_aux2 + str(proposal_choice) +"""'
+    sql7 = """ 
+    with votes_times as 
+   (select proposal_id, max(date_trunc('day', block_timestamp)) as date 
+    from osmosis.core.fact_governance_votes
+    where tx_succeeded = 'TRUE'
     group by proposal_id
     ),
     -- This part is done to drop later all duplicate votes
@@ -843,7 +847,7 @@ with tab3:
     select voter, proposal_id, vote_option, rank() over (partition by voter, proposal_id order by block_timestamp desc) as rank
     from osmosis.core.fact_governance_votes
     where tx_succeeded = 'TRUE'
-    and proposal_id =  '"""+ str(proposal_choice)+"""'
+    and proposal_id in (select max(proposal_id) from votes_times)  
     ),
     votes_proposal as 
     (select voter, 
@@ -853,7 +857,7 @@ with tab3:
     left join osmosis.core.dim_vote_options b 
     on a.vote_option = b.vote_id
     where a.rank = 1
-    and proposal_id =  '"""+str(proposal_choice) +"""'
+    and proposal_id in (select max(proposal_id) from votes_times) 
     ),
     
     
@@ -865,7 +869,7 @@ with tab3:
     from osmosis.core.fact_staking
     where tx_succeeded = 'TRUE' 
     and action = 'delegate'
-    and date_trunc('day', block_timestamp) <= (select date from votes_times)
+    and date_trunc('day', block_timestamp) <= (select max(date) from votes_times)
     group by date, delegator_address, validator_address
     ),
 
@@ -877,7 +881,7 @@ with tab3:
     from osmosis.core.fact_staking
     where tx_succeeded = 'TRUE' 
     and action = 'undelegate'
-    and date_trunc('day', block_timestamp) <= (select date from votes_times)
+    and date_trunc('day', block_timestamp) <= (select  max(date) from votes_times)
     group by date, delegator_address, validator_address
     ),
 
@@ -890,7 +894,7 @@ sum(amount/pow(10, decimal)) as amount
 from osmosis.core.fact_staking
 where tx_succeeded = 'TRUE' 
 and action = 'redelegate'
-and date_trunc('day', block_timestamp) <= (select date from votes_times)
+and date_trunc('day', block_timestamp) <= (select  max(date) from votes_times)
 group by date, delegator_address, validator_address
 
 ),
@@ -904,7 +908,7 @@ sum(amount/pow(10, decimal))*(-1) as amount
 from osmosis.core.fact_staking
 where tx_succeeded = 'TRUE' 
 and action = 'redelegate'
-and date_trunc('day', block_timestamp) <= (select date from votes_times)
+and date_trunc('day', block_timestamp) <= (select  max(date) from votes_times)
 group by date, delegator_address, redelegate_source_validator_address
 
 ),
@@ -922,7 +926,7 @@ group by date, delegator_address, redelegate_source_validator_address
     left join osmosis.core.dim_vote_options b 
     on a.vote_option = b.vote_id
     where voter in (select distinct account_address from validators_address)
-    and proposal_id =  '"""+str(proposal_choice) +"""'
+    and proposal_id in (select max(proposal_id) from votes_times) 
     and tx_succeeded = 'TRUE'
     ),
     val_votes as (
