@@ -1175,8 +1175,7 @@ group by 1 """
     results7_new = compute_6(sql7_new)
     df7_new = pd.DataFrame(results7_new.records)
     df7_new = df7_new.sort_values(by ='mindate', ascending = True)
-    fig1 = px.scatter(df7_new, x="mindate", y="num_delegators",
-	         size="num_delegators",  log_x=True, size_max=60,
+    fig1 = px.scatter(df7_new, x='mindate', y='num_delegators',  
     color_discrete_sequence=px.colors.qualitative.Vivid)
     fig1.update_layout(
     title="Selected validator - current delegators first time they delegated",
