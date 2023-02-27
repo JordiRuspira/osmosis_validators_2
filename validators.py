@@ -1178,8 +1178,8 @@ group by 1 """
     fig1 = px.scatter(df7_new, x='mindate', y='num_delegators',  size="num_delegators",
     color_discrete_sequence=px.colors.qualitative.Vivid)
     fig1.update_layout(
-    title="Selected validator - current delegators first time they delegated",
-    xaxis_title="First time delegated",
+    title="Selected validator - current delegators first transaction",
+    xaxis_title="First transaction time ",
     yaxis_title="Number of users", 
     xaxis_tickfont_size=14,
     yaxis_tickfont_size=14,
