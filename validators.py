@@ -106,6 +106,7 @@ proposal_choice = st.selectbox("Select a proposal", options = df1['proposal_id']
 
 st.write('We can see how validators voted on the selected proposal, ordered by rank and voting option.') 
 st.write('')
+st.write('Keep in mind that the following data regarding total osmo staked, we`ve not taken into account superfluid staked OSMO, since it cannot be overwritten by delegators. It currently sits around 30M OSMO staked, so the real turnout if only delegators voted would be even lower.')
 
 df0_fil = df0[df0['proposal_id'] == proposal_choice]
 
