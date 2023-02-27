@@ -1005,7 +1005,7 @@ group by date, delegator_address, redelegate_source_validator_address
     
     fig1 = px.bar(df7, x="grouped", y="total_amount", color_discrete_sequence=px.colors.qualitative.Vivid)
     fig1.update_layout(
-    title="Selected proposal and validator - delegation distribution",
+    title="Selected validator - current delegation distribution",
     xaxis_title="Category",
     yaxis_title="Total amount staked by group (OSMO)", 
     xaxis_tickfont_size=14,
@@ -1017,7 +1017,7 @@ group by date, delegator_address, redelegate_source_validator_address
     
     fig1 = px.bar(df7, x="grouped", y="num_users", color_discrete_sequence=px.colors.qualitative.Vivid)
     fig1.update_layout(
-    title="Selected proposal and validator - delegation distribution",
+    title="Selected validator - current delegation distribution",
     xaxis_title="Category",
     yaxis_title="Number of users", 
     xaxis_tickfont_size=14,
