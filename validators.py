@@ -1028,7 +1028,166 @@ group by date, delegator_address, redelegate_source_validator_address
     col2.plotly_chart(fig1, theme="streamlit", use_container_width=True)
     
         
+    sql7_new = """with votes_times as 
+   (select proposal_id, max(date_trunc('day', block_timestamp)) as date 
+    from osmosis.core.fact_governance_votes
+    where tx_succeeded = 'TRUE'
+    group by proposal_id
+    ),
+    -- This part is done to drop later all duplicate votes
+    votes_proposal_aux as (
+    select voter, proposal_id, vote_option, rank() over (partition by voter, proposal_id order by block_timestamp desc) as rank
+    from osmosis.core.fact_governance_votes
+    where tx_succeeded = 'TRUE'
+    and proposal_id in (select max(proposal_id) from votes_times)  
+    ),
+    votes_proposal as 
+    (select voter, 
+    proposal_id,
+    b.description
+    from votes_proposal_aux a 
+    left join osmosis.core.dim_vote_options b 
+    on a.vote_option = b.vote_id
+    where a.rank = 1
+    and proposal_id in (select max(proposal_id) from votes_times) 
+    ),
     
+    
+    delegations as (
+    select date_trunc('day', block_timestamp) as date,
+    delegator_address,
+    validator_address,
+    sum(amount/pow(10, decimal)) as amount 
+    from osmosis.core.fact_staking
+    where tx_succeeded = 'TRUE' 
+    and action = 'delegate'
+    and date_trunc('day', block_timestamp) <= (select max(date) from votes_times)
+    group by date, delegator_address, validator_address
+    ),
+    undelegations as (
+    select date_trunc('day', block_timestamp) as date,
+    delegator_address,
+    validator_address,
+    sum(amount/pow(10, decimal))*(-1) as amount 
+    from osmosis.core.fact_staking
+    where tx_succeeded = 'TRUE' 
+    and action = 'undelegate'
+    and date_trunc('day', block_timestamp) <= (select  max(date) from votes_times)
+    group by date, delegator_address, validator_address
+    ),
+redelegations_to as 
+(
+select date_trunc('day', block_timestamp) as date,
+delegator_address,
+validator_address,
+sum(amount/pow(10, decimal)) as amount 
+from osmosis.core.fact_staking
+where tx_succeeded = 'TRUE' 
+and action = 'redelegate'
+and date_trunc('day', block_timestamp) <= (select  max(date) from votes_times)
+group by date, delegator_address, validator_address
+),
+redelegations_from as 
+(
+select date_trunc('day', block_timestamp) as date,
+delegator_address,
+redelegate_source_validator_address as validator_address,
+sum(amount/pow(10, decimal))*(-1) as amount 
+from osmosis.core.fact_staking
+where tx_succeeded = 'TRUE' 
+and action = 'redelegate'
+and date_trunc('day', block_timestamp) <= (select  max(date) from votes_times)
+group by date, delegator_address, redelegate_source_validator_address
+),
+    validators_address as (
+    select address, label, raw_metadata:"account_address" as account_address
+    from osmosis.core.fact_validators 
+    ),
+    val_votes_aux as 
+    (
+    select voter, 
+    proposal_id, 
+    b.description, 
+    rank() over (partition by voter, proposal_id order by block_timestamp desc) as rank
+    from osmosis.core.fact_governance_votes a 
+    left join osmosis.core.dim_vote_options b 
+    on a.vote_option = b.vote_id
+    where voter in (select distinct account_address from validators_address)
+    and proposal_id in (select max(proposal_id) from votes_times) 
+    and tx_succeeded = 'TRUE'
+    ),
+    val_votes as (
+    select voter, b.address, proposal_id, description from val_votes_aux a
+    left join validators_address b 
+    on a.voter = b.account_address
+    where rank = 1 
+    ),
+
+    allvotesinfo as (
+    select 
+    delegator_address, 
+    case when b.voter is null then 'Did not vote'
+    else b.description end as vote, 
+    validator_address, 
+    c.label, 
+    c.rank,
+    case when d.description is null then 'Did not vote'
+    else d.description end as validator_vote,
+    sum(amount) as total_amount
+    from (
+      select * from delegations
+      union all 
+      select * from undelegations 
+      union all 
+      select * from redelegations_to 
+      union all 
+      select * from redelegations_from
+      ) a 
+    left join votes_proposal b 
+    on a.delegator_address = b.voter
+    left join osmosis.core.fact_validators c 
+    on a.validator_address = c.address 
+    left join val_votes d 
+    on a.validator_address = d.address  
+    where c.label =  '"""+str(validator_choice) +"""'
+        group by 
+    delegator_address, 
+    vote,
+    validator_address,
+    c.label,
+    c.rank,
+    validator_vote
+    ),
+
+last_table as (
+ 
+    select tx_from, min(date_trunc('day', block_timestamp)) as mindate
+from osmosis.core.fact_transactions
+where tx_succeeded = 'TRUE' 
+and tx_from in (select distinct delegator_address from allvotesinfo )
+group by 1 
+  )
+
+select mindate, count(distinct delegator_address) as num_delegators
+from last_table
+group by 1 """
+
+    results7_new = compute_6(sql7_new)
+    df7_new = pd.DataFrame(results7_new.records)
+    df7_new = df7_new.sort_values(by ='mindate', ascending = True)
+    fig1 = px.scatter(df7_new, x="mindate", y="num_delegators",
+	         size="num_delegators",  log_x=True, size_max=60,
+    color_discrete_sequence=px.colors.qualitative.Vivid)
+    fig1.update_layout(
+    title="Selected validator - current delegators first time they delegated",
+    xaxis_title="First time delegated",
+    yaxis_title="Number of users", 
+    xaxis_tickfont_size=14,
+    yaxis_tickfont_size=14,
+    bargap=0.15, # gap between bars of adjacent location coordinates.
+    bargroupgap=0.1 # gap between bars of the same location coordinate.
+    )
+    st.plotly_chart(fig1, theme="streamlit", use_container_width=True)
     
 # In[13]: 
 with tab4: 
