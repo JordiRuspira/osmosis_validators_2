@@ -125,7 +125,7 @@ with tab1:
     st.write('')
     st.write('The following chart shows how validators voted for the selected proposal.')
     st.write('')
-    fig1 = px.bar(df0_fil, x="label", y="value", color="description", color_discrete_sequence=px.colors.qualitative.Vivid)
+    fig1 = px.bar(df0_fil, x="label", y="value", color="description", color_discrete_sequence=px.colors.qualitative.Pastel2)
     fig1.update_layout(
     title='Validator voting choice for selected proposal',
     xaxis_tickfont_size=14,
@@ -265,7 +265,7 @@ group by casuistic, b.total_amount
     st.write('Next, we can see how delegators voted. Please note that when calculating the percentage over total staked Osmo, I have not taken into account superfluid staked Osmo. This turns out to be even worse for delegator turnout since SFS Osmo cannot yet be overwritten.')
     col1, col2 = st.columns(2) 
     
-    fig1 = px.bar(df6, x="casuistic", y="percentage", color_discrete_sequence=px.colors.qualitative.Vivid)
+    fig1 = px.bar(df6, x="casuistic", y="percentage", color_discrete_sequence=px.colors.qualitative.Pastel2)
     fig1.update_layout(
     title="Selected proposal and delegator total percentage",
     xaxis_title="Vote/did not vote",
@@ -277,7 +277,7 @@ group by casuistic, b.total_amount
     )
     col1.plotly_chart(fig1, theme="streamlit", use_container_width=True)
    
-    fig1 = px.bar(df6, x="casuistic", y="total_amount_group", color_discrete_sequence=px.colors.qualitative.Vivid)
+    fig1 = px.bar(df6, x="casuistic", y="total_amount_group", color_discrete_sequence=px.colors.qualitative.Pastel2)
     fig1.update_layout(
     title="Selected proposal and delegator votes",
     xaxis_title="Vote/did not vote",
@@ -411,7 +411,7 @@ group by description
     
     col1, col2 = st.columns(2) 
     
-    fig1 = px.bar(df_det, x="description", y="total_amount_group", color_discrete_sequence=px.colors.qualitative.Vivid)
+    fig1 = px.bar(df_det, x="description", y="total_amount_group", color_discrete_sequence=px.colors.qualitative.Pastel2)
     fig1.update_layout(
     title="Selected proposal - delegator votes by choice",
     xaxis_title="Voting choice",
@@ -423,7 +423,7 @@ group by description
     )
     col1.plotly_chart(fig1, theme="streamlit", use_container_width=True)
    
-    fig1 = px.bar(df_det, x="description", y="num_addresses", color_discrete_sequence=px.colors.qualitative.Vivid)
+    fig1 = px.bar(df_det, x="description", y="num_addresses", color_discrete_sequence=px.colors.qualitative.Pastel2)
     fig1.update_layout(
     title="Selected proposal - number of delegators by choice",
     xaxis_title="Voting choice",
