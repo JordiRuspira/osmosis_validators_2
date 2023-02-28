@@ -1272,7 +1272,7 @@ group by date, delegator_address, redelegate_source_validator_address
     results7 = compute_6(sql7)
     df7 = pd.DataFrame(results7.records)
     df7 = df7.sort_values(by ='grouped_numeric', ascending = True)
-    
+    st.write('Finally, we can look at the current delegation distribution for the selected validator, both in terms of total Osmo delegated by type of user (small amount delegated users to big whales), and then by number of users which fall in each category.')
     col1, col2 = st.columns(2) 
     
     fig1 = px.bar(df7, x="grouped", y="total_amount", color_discrete_sequence=px.colors.qualitative.Prism)
@@ -1443,7 +1443,7 @@ group by 1
 select mindate, count(distinct tx_from) as num_delegators
 from last_table
 group by 1 """
-
+    st.write('Another interesting thing is looking at the first transaction time of delegators for the selected validator. This might show some additional info to which users a validator is attracting.')
     results7_new = compute_6(sql7_new)
     df7_new = pd.DataFrame(results7_new.records)
     df7_new = df7_new.sort_values(by ='mindate', ascending = True)
@@ -1467,8 +1467,7 @@ group by 1 """
 
 
 st.header('Conclusions')
-st.markdown('**Osmosis Governance** blabla.')
-st.markdown('The most interesting things we have found are:')
-st.write('- Blah')
- 
+st.markdown('Osmosis governance and cosmos chains governance in general is always a hot and messy topic. I hope this dashboard draws attention to some insights otherwise hidden to plain sight, and that both delegators and validators can make use of it.')
+st.markdown('Please reach out on twitter below if you feel something interesting is missing, or misleading.')
+st.markdown('Streamlit App by [Jordi R.](https://twitter.com/RuspiTorpi/). Powered by Flipsidecrypto') 
  
