@@ -289,6 +289,152 @@ group by casuistic, b.total_amount
     )
     col2.plotly_chart(fig1, theme="streamlit", use_container_width=True)   
     
+    
+    sql_det = df_query_aux2 + str(proposal_choice) + """'
+group by proposal_id ),  
+   
+    
+votes_proposal_aux as (
+select voter, proposal_id, vote_option, rank() over (partition by voter, proposal_id order by block_timestamp desc) as rank
+from osmosis.core.fact_governance_votes
+where tx_succeeded = 'TRUE'
+and proposal_id in (select proposal_id from votes_times)
+), 
+votes_proposal as 
+(select voter, 
+proposal_id,
+b.description
+from votes_proposal_aux a 
+left join osmosis.core.dim_vote_options b 
+on a.vote_option = b.vote_id
+where a.rank = 1
+and proposal_id in (select proposal_id from votes_times)
+),
+delegations as (
+select date_trunc('day', block_timestamp) as date,
+delegator_address,
+validator_address,
+sum(amount/pow(10, decimal)) as amount 
+from osmosis.core.fact_staking
+where tx_succeeded = 'TRUE' 
+and action = 'delegate'
+and date_trunc('day', block_timestamp) <= (select date from votes_times)
+group by date, delegator_address, validator_address
+),
+undelegations as (
+select date_trunc('day', block_timestamp) as date,
+delegator_address,
+validator_address,
+sum(amount/pow(10, decimal))*(-1) as amount 
+from osmosis.core.fact_staking
+where tx_succeeded = 'TRUE' 
+and action = 'undelegate'
+and date_trunc('day', block_timestamp) <= (select date from votes_times)
+group by date, delegator_address, validator_address
+),
+redelegations_to as 
+(
+select date_trunc('day', block_timestamp) as date,
+delegator_address,
+validator_address,
+sum(amount/pow(10, decimal)) as amount 
+from osmosis.core.fact_staking
+where tx_succeeded = 'TRUE' 
+and action = 'redelegate'
+and date_trunc('day', block_timestamp) <= (select date from votes_times)
+group by date, delegator_address, validator_address
+),
+redelegations_from as 
+(
+select date_trunc('day', block_timestamp) as date,
+delegator_address,
+redelegate_source_validator_address as validator_address,
+sum(amount/pow(10, decimal))*(-1) as amount 
+from osmosis.core.fact_staking
+where tx_succeeded = 'TRUE' 
+and action = 'redelegate'
+and date_trunc('day', block_timestamp) <= (select date from votes_times)
+group by date, delegator_address, redelegate_source_validator_address
+),
+
+total_amount_staked as (
+select    
+sum(amount) as total_amount
+from (
+  select * from delegations
+  union all 
+  select * from undelegations 
+  union all 
+  select * from redelegations_to 
+  union all 
+  select * from redelegations_from
+  ) a 
+),
+
+total_amount_staked_voters as (
+select delegator_address, description,
+sum(amount) as total_amount
+from (
+  select * from delegations
+  union all 
+  select * from undelegations 
+  union all 
+  select * from redelegations_to 
+  union all 
+  select * from redelegations_from
+  ) a 
+left join votes_proposal b 
+on a.delegator_address = b.voter
+group by delegator_address, description
+)
+
+select description, 
+count(distinct delegator_address) as num_addresses,
+sum(a.total_amount) as total_amount_group 
+from total_amount_staked_voters a
+where description is not null
+group by description
+   """
+   
+    st.experimental_memo(ttl=1000000)
+    @st.experimental_memo
+    def compute_10(a):
+        results=sdk.query(a)
+        return results
+      
+    results_det = compute_1(sql_det)
+    df_det = pd.DataFrame(results_det.records)
+    
+    st.write('')
+    st.write('The following charts show, out of all delegators who voted, their voting distribution by staked amount.')
+    st.write('')
+    
+    col1, col2 = st.columns(2) 
+    
+    fig1 = px.bar(df_det, x="description", y="total_amount_group", color_discrete_sequence=px.colors.qualitative.Vivid)
+    fig1.update_layout(
+    title="Selected proposal - delegator votes by choice",
+    xaxis_title="Voting choice",
+    yaxis_title="Total amount staked by delegators", 
+    xaxis_tickfont_size=14,
+    yaxis_tickfont_size=14,
+    bargap=0.15, # gap between bars of adjacent location coordinates.
+    bargroupgap=0.1 # gap between bars of the same location coordinate.
+    )
+    col1.plotly_chart(fig1, theme="streamlit", use_container_width=True)
+   
+    fig1 = px.bar(df_det, x="description", y="num_addresses", color_discrete_sequence=px.colors.qualitative.Vivid)
+    fig1.update_layout(
+    title="Selected proposal - number of delegators by choice",
+    xaxis_title="Voting choice",
+    yaxis_title="Number of delegators", 
+    xaxis_tickfont_size=14,
+    yaxis_tickfont_size=14,
+    bargap=0.15, # gap between bars of adjacent location coordinates.
+    bargroupgap=0.1 # gap between bars of the same location coordinate.
+    )
+    col2.plotly_chart(fig1, theme="streamlit", use_container_width=True)   
+    
 # In[8]:
     
     st.subheader("Historical turnout")
