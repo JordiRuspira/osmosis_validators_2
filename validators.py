@@ -451,7 +451,7 @@ group by description
     xaxis_title="Proposal ID",
     yaxis_title="Percentage over total amount staked", 
     xaxis_tickfont_size=14,
-    yaxis_tickfont_size=14 
+    yaxis_tickfont_size=14 ,
     bargap=0.15, # gap between bars of adjacent location coordinates.
     bargroupgap=0.1 # gap between bars of the same location coordinate.
     )
