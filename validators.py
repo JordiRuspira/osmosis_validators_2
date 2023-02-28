@@ -100,7 +100,8 @@ df2.info()
 
 import math
 st.subheader('Selecting a proposal ID')
-selection = df1['proposal_id'].unique().sort()
+selection = df1['proposal_id'].unique()
+selection_sorted = selection.sort()
 proposal_choice = '427'
 proposal_choice = st.selectbox("Select a proposal", options = selection ) 
 
