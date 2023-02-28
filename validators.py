@@ -1076,7 +1076,7 @@ group by 1"""
         fig1 = px.bar(df5_1, x="redelegated_to_label", y="total_amount", color="validator_redelegated_to_vote", color_discrete_sequence=px.colors.qualitative.Prism)
         fig1.update_layout(
         title="Selected proposal and validator - Vote choice and amount redelegated to other validators - Destination validator voting choice",
-        xaxis_title="Validator redelegated from",
+        xaxis_title="Validator redelegated to",
         yaxis_title="Amount (OSMO)",
         legend_title="Destination validator choice",
         xaxis_tickfont_size=14,
@@ -1092,7 +1092,7 @@ group by 1"""
         fig1 = px.bar(df5_2, x="redelegated_to_label", y="total_amount", color="vote", color_discrete_sequence=px.colors.qualitative.Prism)
         fig1.update_layout(
         title="Selected proposal and validator - Vote choice and amount redelegated to other validators - Redelegator voting choice",
-        xaxis_title="Validator redelegated from",
+        xaxis_title="Validator redelegated to",
         yaxis_title="Amount (OSMO)",
         legend_title="Redelegator choice",
         xaxis_tickfont_size=14,
