@@ -817,9 +817,9 @@ group by 1"""
 
 
     
-    st.subheader("Redelegations from the selected validator")    
+    st.subheader("Redelegations to the selected validator")    
     st.write('')
-    st.markdown("We can display how users behaved. For instance, we can first look at how many redelegations there were from the selected validator towards other validators, and what option did those validators vote.")
+    st.markdown("We can display how users behaved. For instance, we can first look at how many redelegations there were to the selected validator from other validators, and what option did those validators vote.")
     st.write('')
     st.write('As stated at the start of the dashboard, the following numbers take into account the days between the voting started and 7 days after it ended.')
     sql4 = df_query_aux2 + str(proposal_choice) +"""'
@@ -956,7 +956,7 @@ group by 1"""
         )
         st.plotly_chart(fig1, theme="streamlit", use_container_width=True)
         st.text("")
-        st.markdown("Apart from this, we can also display how individual delegators who redelegated to the validators displayed above voted. Thus, the following chart displays the same numbers as the chart above, but differenciating by delegators votes. This will allow any validator using this dashboard to see whether they believe their voting option influenced somehow their delegators or if the reason for redelegations seems to be a different one. ")
+        st.markdown("Apart from this, we can also display how individual delegators who redelegated to the selected validatore voted. Thus, the following chart displays the same numbers as the chart above, but differenciating by delegators votes. This will allow any validator using this dashboard to see whether they believe their voting option influenced somehow their delegators or if the reason for redelegations seems to be a different one. ")
         st.text("") 
 
         fig1 = px.bar(df4_2, x="redelegated_from_label", y="total_amount", color="vote", color_discrete_sequence=px.colors.qualitative.Vivid)
@@ -1091,14 +1091,14 @@ group by 1"""
     df5 = pd.DataFrame(results5.records)
 
     st.text("")
-    st.subheader("Redelegations to the selected validator")
+    st.subheader("Redelegations from the selected validator")
     st.text("")
-    st.markdown("We previously showed how users redelegating from the selected validator behaved. Now we can do the same exercise but the other way around. We can see how votes coming from other validators to the selected one behave, and see if it is coherent with the previous result.")
+    st.markdown("I`ve previously showed how users redelegating to the selected validator behaved. Now we can look it the other way around, this is, looking at the redelegations from the selected validator towards other validators, to see whether it is coherent with the previous result.")
     st.text("")
 
 
     if df5.empty:
-        st.error("There were no redelegations to the selected validator and proposal ID")
+        st.error("There were no redelegations from the selected validator and proposal ID")
     else: 
 
 
