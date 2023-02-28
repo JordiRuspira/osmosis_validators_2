@@ -1492,7 +1492,7 @@ with tab3:
     on a.validator_address = e.address
     where action = 'redelegate'
     and d.rank is not null
-    and a.to_date(block_timestamp) >= '"""
+    and to_date(a.block_timestamp) >= '"""
 
     SQL_QUERY_SANK2 = """'
 
