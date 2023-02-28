@@ -25,8 +25,8 @@ st.title('Osmosis Governance')
 st.markdown('Governance and validator power is a recurrent topic when talking about delegated proof of stake blockchains. This dashboard and tool pretends show how users behave with respect to the validators they are delegating to, as well as how governance would be without a delegated PoS system, just a proof of stake one. Therefore, this dashboard should help validators have a better understanding and insights of how their voting options impacts on their delegators.')
 st.markdown('This dashboard is structured as follows:')
 st.write('- First off, you should select a proposal ID to inspect how that specific proposal went.')
-st.write('- You then are presented with three tabs. The first one is just an overview of how individual validators voted on that proposal. The second one allows you to see in big numbers how delegators voted and the quorum it would have reached if only their vote counted (over total percentage of Osmo staked). The last tab in this section allows for users to see this data for all proposals already voted. Spoiler: almost no proposal would have reached quorum if it werent for the delegated proof of stake system.')
-st.write('- After this section come the insights for specific validators. Once a proposal ID has been selected in the previous section, you should choose a validator from the select box to see how delegators reacted for that validator and proposal. The numbers displayed here show movement between the go live of the proposal and 7 days after the ending of the vote. Again, there are multiple tabs to show different information.')
+st.write('- You then are presented with two tabs. The first one is just an overview of how individual validators voted on that proposal,how many delegators voted and the turnout it would have reached if only their vote counted (over total percentage of Osmo staked). It also shows the turnout for all proposals already voted. Spoiler: almost no proposal would have reached quorum if it werent for the delegated proof of stake system.')
+st.write('- After this section come the insights for specific validators in a second tab. Once a proposal ID has been selected in the previous section, you should choose a validator from the select box to see how delegators reacted for that validator and proposal. The numbers displayed here show movement between the go live of the proposal and 7 days after the ending of the vote. Again, there are multiple tabs to show different information.')
 st.markdown('If there`s any missing information or misleading one, please do not hesitate to reach out on twitter.')
 
  
@@ -100,14 +100,17 @@ df2.info()
 
 import math
 st.subheader('Selecting a proposal ID')
+st.write('')
+st.write('The first step in the dashboard would be selecting/typing a proposal ID using the selectbox below. Afterwards, the pages below will also refresh showing:') 
+st.write('- Validator vote, total delegator votes and historical turnout')
+st.write('- In a second tab, you can navigate to inspect how the proposal affected to redelegations from/to a sepecific delegator, as well as some additional info.')
 selection = df1['proposal_id'].unique()
 selection_sorted = selection.sort()
 proposal_choice = '427'
 proposal_choice = st.selectbox("Select a proposal", options = selection ) 
-
-st.write('We can see how validators voted on the selected proposal, ordered by rank and voting option.') 
-st.write('')
-st.write('Keep in mind that the following data regarding total osmo staked, we`ve not taken into account superfluid staked OSMO, since it cannot be overwritten by delegators. It currently sits around 30M OSMO staked, so the real turnout if only delegators voted would be even lower.')
+ 
+ 
+st.write('Keep in mind that the following data regarding total osmo staked, I`ve not taken into account superfluid staked OSMO, since it cannot be overwritten by delegators. It currently sits around 30M OSMO staked, so the real turnout if only delegators voted would be even lower.')
 
 df0_fil = df0[df0['proposal_id'] == proposal_choice]
 
@@ -119,7 +122,9 @@ with tab1:
     
     
     st.subheader("Validator vote for the selected proposal")
-    
+    st.write('')
+    st.write('The following chart shows how validators voted for the selected proposal.')
+    st.write('')
     fig1 = px.bar(df0_fil, x="label", y="value", color="description", color_discrete_sequence=px.colors.qualitative.Vivid)
     fig1.update_layout(
     title='Validator voting choice for selected proposal',
@@ -256,6 +261,8 @@ group by casuistic, b.total_amount
     df6 = pd.DataFrame(results6.records)
     
     st.subheader("Turnout for the selected proposal")
+    st.write('')
+    st.write('Next, we can see how delegators voted. Please note that when calculating the percentage over total staked Osmo, I have not taken into account superfluid staked Osmo. This turns out to be even worse for delegator turnout since SFS Osmo cannot yet be overwritten.')
     col1, col2 = st.columns(2) 
     
     fig1 = px.bar(df6, x="casuistic", y="percentage", color_discrete_sequence=px.colors.qualitative.Vivid)
@@ -285,7 +292,9 @@ group by casuistic, b.total_amount
 # In[8]:
     
     st.subheader("Historical turnout")
-    
+    st.write('')
+    st.write('Finally, using the same criteria, we can look at historical turnout for previous proposals. Note that almost no proposals would have reached the 20% quorum needed for it to pass if it wasn`t for the validator votes.')
+    st.write('')
     df_allvotes = pd.read_csv('allvotes.csv')
     df_allvotes_filtered = df_allvotes[df_allvotes['casuistic'] == 'Voted']
     df_allvotes_filtered = df_allvotes_filtered.sort_values(by ='proposal_id', ascending = True)
@@ -360,6 +369,8 @@ from plotly.subplots import make_subplots
 with tab2:
     
     st.subheader('Selecting a validator')
+    st.write('')
+    st.write('Now that you have already selected a proposal, it`s time to select a validator too, and this tab will refresh with that choice.')
     st.write('Use the selectbox below to select the validator you want to analyze.') 
     st.write('')
     validator_choice = 'Stakecito'
@@ -518,7 +529,8 @@ with tab2:
     st.subheader("Redelegations from the selected validator")    
     st.write('')
     st.markdown("We can display how users behaved. For instance, we can first look at how many redelegations there were from the selected validator towards other validators, and what option did those validators vote.")
- 
+    st.write('')
+    st.write('As stated at the start of the dashboard, the following numbers take into account the days between the voting started and 7 days after it ended.')
     sql4 = df_query_aux2 + str(proposal_choice) +"""'
     group by proposal_id
     ),
@@ -834,7 +846,7 @@ with tab2:
 
 # In[13]: 
     
-    st.subheader("Delegetors distribution for the selected validator") 
+    st.subheader("Delegators distribution for the selected validator") 
  
     st.experimental_memo(ttl=1000000)
     @st.experimental_memo
