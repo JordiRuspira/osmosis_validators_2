@@ -789,7 +789,7 @@ group by 1"""
     st.write('')
     col1, col2 = st.columns(2) 
     
-    fig1 = px.bar(df_val_det, x="casuistic", y="total_amount", color_discrete_sequence=px.colors.qualitative.Vivid)
+    fig1 = px.bar(df_val_det, x="casuistic", y="total_amount", color_discrete_sequence=px.colors.qualitative.Prism)
     fig1.update_layout(
     title="Selected proposal - redelegators validators choice",
     xaxis_title="Voting changes",
@@ -801,7 +801,7 @@ group by 1"""
     )
     col1.plotly_chart(fig1, theme="streamlit", use_container_width=True)
    
-    fig1 = px.bar(df_val_det, x="casuistic", y="num_delegators", color_discrete_sequence=px.colors.qualitative.Vivid)
+    fig1 = px.bar(df_val_det, x="casuistic", y="num_delegators", color_discrete_sequence=px.colors.qualitative.Prism)
     fig1.update_layout(
     title="Selected proposal - number of delegators by choice",
     xaxis_title="Voting changes",
@@ -943,7 +943,7 @@ group by 1"""
         df4_1 = df4.groupby(by=['redelegated_from_label','validator_redelegated_from_vote']).sum().reset_index(drop=False)
         df4_2 = df4.groupby(by=['redelegated_from_label','vote']).sum().reset_index(drop=False)
 
-        fig1 = px.bar(df4_1, x="redelegated_from_label", y="total_amount", color="validator_redelegated_from_vote", color_discrete_sequence=px.colors.qualitative.Vivid)
+        fig1 = px.bar(df4_1, x="redelegated_from_label", y="total_amount", color="validator_redelegated_from_vote", color_discrete_sequence=px.colors.qualitative.Prism)
         fig1.update_layout(
         title="Selected proposal and validator - Vote choice and amount redelegated from other validators",
         xaxis_title="Validator redelegated from",
@@ -959,7 +959,7 @@ group by 1"""
         st.markdown("Apart from this, we can also display how individual delegators who redelegated to the selected validatore voted. Thus, the following chart displays the same numbers as the chart above, but differenciating by delegators votes. This will allow any validator using this dashboard to see whether they believe their voting option influenced somehow their delegators or if the reason for redelegations seems to be a different one. ")
         st.text("") 
 
-        fig1 = px.bar(df4_2, x="redelegated_from_label", y="total_amount", color="vote", color_discrete_sequence=px.colors.qualitative.Vivid)
+        fig1 = px.bar(df4_2, x="redelegated_from_label", y="total_amount", color="vote", color_discrete_sequence=px.colors.qualitative.Prism)
         fig1.update_layout(
         title="Selected proposal and validator - Vote choice and amount redelegated from other validators - Redelegator voting choice",
         xaxis_title="Validator redelegated from",
@@ -1105,7 +1105,7 @@ group by 1"""
         df5_1 = df5.groupby(by=['redelegated_to_label','validator_redelegated_to_vote']).sum().reset_index(drop=False)
         df5_2 = df5.groupby(by=['redelegated_to_label','vote']).sum().reset_index(drop=False)
 
-        fig1 = px.bar(df5_1, x="redelegated_to_label", y="total_amount", color="validator_redelegated_to_vote", color_discrete_sequence=px.colors.qualitative.Vivid)
+        fig1 = px.bar(df5_1, x="redelegated_to_label", y="total_amount", color="validator_redelegated_to_vote", color_discrete_sequence=px.colors.qualitative.Prism)
         fig1.update_layout(
         title="Selected proposal and validator - Vote choice and amount redelegated to other validators - Destination validator voting choice",
         xaxis_title="Validator redelegated from",
@@ -1121,7 +1121,7 @@ group by 1"""
         st.markdown("Apart from this, we can also display how individual delegators who redelegated to the validators displayed above voted. Thus, the following chart displays the same numbers as the chart above, but differenciating by delegators votes. This will allow any validator using this dashboard to see whether they believe their voting option influenced somehow their delegators or if the reason for redelegations seems to be a different one. ")
         st.text("") 
 
-        fig1 = px.bar(df5_2, x="redelegated_to_label", y="total_amount", color="vote", color_discrete_sequence=px.colors.qualitative.Vivid)
+        fig1 = px.bar(df5_2, x="redelegated_to_label", y="total_amount", color="vote", color_discrete_sequence=px.colors.qualitative.Prism)
         fig1.update_layout(
         title="Selected proposal and validator - Vote choice and amount redelegated to other validators - Redelegator voting choice",
         xaxis_title="Validator redelegated from",
@@ -1316,7 +1316,7 @@ group by date, delegator_address, redelegate_source_validator_address
     
     col1, col2 = st.columns(2) 
     
-    fig1 = px.bar(df7, x="grouped", y="total_amount", color_discrete_sequence=px.colors.qualitative.Vivid)
+    fig1 = px.bar(df7, x="grouped", y="total_amount", color_discrete_sequence=px.colors.qualitative.Prism)
     fig1.update_layout(
     title="Selected validator - current delegation distribution",
     xaxis_title="Category",
@@ -1328,7 +1328,7 @@ group by date, delegator_address, redelegate_source_validator_address
     )
     col1.plotly_chart(fig1, theme="streamlit", use_container_width=True)
     
-    fig1 = px.bar(df7, x="grouped", y="num_users", color_discrete_sequence=px.colors.qualitative.Vivid)
+    fig1 = px.bar(df7, x="grouped", y="num_users", color_discrete_sequence=px.colors.qualitative.Prism)
     fig1.update_layout(
     title="Selected validator - current delegation distribution",
     xaxis_title="Category",
@@ -1489,7 +1489,7 @@ group by 1 """
     df7_new = pd.DataFrame(results7_new.records)
     df7_new = df7_new.sort_values(by ='mindate', ascending = True)
     fig1 = px.scatter(df7_new, x='mindate', y='num_delegators',  size="num_delegators",
-    color_discrete_sequence=px.colors.qualitative.Vivid)
+    color_discrete_sequence=px.colors.qualitative.Prism)
     fig1.update_layout(
     title="Selected validator - current delegators first transaction",
     xaxis_title="First transaction time ",
