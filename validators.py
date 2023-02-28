@@ -3,7 +3,15 @@
 
 # In[1]:
 
-
+import datetime
+import streamlit as st
+import pandas as pd
+import requests
+import json
+import time
+import plotly.graph_objects as go
+import random
+import plotly.io as pio
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -1490,8 +1498,7 @@ with tab3:
 
     group by from_validator, to_validator, from_validator_rank, to_validator_rank
     order by d.rank"""
-
-    """  
+ 
 
     st.experimental_memo(ttl=1000000)
     @st.experimental_memo
@@ -1515,7 +1522,7 @@ with tab3:
     randcolor = []
     for i in range(1,len(df_sank_aux['LABEL']) + 1):
 
-    randcolor.append("#{:06x}".format(random.randint(0, 0xFFFFFF))) 
+        randcolor.append("#{:06x}".format(random.randint(0, 0xFFFFFF))) 
 
     df_sank_aux['COLOR'] = randcolor
 
