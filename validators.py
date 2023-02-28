@@ -99,8 +99,9 @@ df2.info()
 # In[6]:
 
 import math
-st.subheader('Selecting a proposal ID')
+
 st.write('')
+st.header('Selecting a proposal ID') 
 st.write('The first step in the dashboard would be selecting/typing a proposal ID using the selectbox below. Afterwards, the pages below will also refresh showing:') 
 st.write('- Validator vote, total delegator votes and historical turnout')
 st.write('- In a second tab, you can navigate to inspect how the proposal affected to redelegations from/to a sepecific delegator, as well as some additional info.')
@@ -467,47 +468,6 @@ group by description
     
     
 # In[8]:
-
-
-st.markdown(""" <style> div.css-12w0qpk.e1tzin5v2{
- background-color: #f5f5f5;
- border: 2px solid;
- padding: 10px 5px 5px 5px;
- border-radius: 10px;
- color: #ffc300;
- box-shadow: 10px;
-}
-div.css-1r6slb0.e1tzin5v2{
- background-color: #f5f5f5;
- border: 2px solid; /* #900c3f */
- border-radius: 10px;
- padding: 10px 5px 5px 5px;
- color: green;
-}
-div.css-50ug3q.e16fv1kl3{
- font-weight: 900;
-} 
-</style> """, unsafe_allow_html=True)
-
-st.markdown(""" <style> div.css-ocqkz7.e1tzin5v4{
- background-color: #f5f5f5;
- border: 2px solid;
- padding: 10px 5px 5px 5px;
- border-radius: 10px;
- color: #ffc300;
- box-shadow: 10px;
-}
-div.css-keje6w.ce1tzin5v2{
- background-color: #f5f5f5;
- border: 2px solid; /* #900c3f */
- border-radius: 10px;
- padding: 10px 5px 5px 5px;
- color: orange;
-}
-div.css-12ukr4l.e1tzin5v0{
- font-weight: 900;
-} 
-</style> """, unsafe_allow_html=True)
     
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
@@ -518,7 +478,6 @@ with tab2:
     st.write('')
     st.write('Now that you have already selected a proposal, it`s time to select a validator too, and this tab will refresh with that choice.')
     st.write('Use the selectbox below to select the validator you want to analyze.') 
-    st.write('')
     validator_choice = 'Stakecito'
     validator_choice = st.selectbox("Select a validator", options = df2['label'].unique() ) 
     
@@ -783,6 +742,7 @@ group by 1"""
     results_val_det = compute_4(sql_val_det)
     df_val_det = pd.DataFrame(results_val_det.records)
     
+    st.text("")
     st.subheader("Redelegations overview")    
     st.write('')
     st.write('The following chart can be used as an introduction, in order to see how delegators redelegated overall for that proposal. When selecting a proposal ID, it shows how delegators redelegated from a validator vote do another validator vote. The same is shown on the side for number of redelegators.')
@@ -816,11 +776,10 @@ group by 1"""
 # In[10]:
 
 
-    
+    st.text("")
     st.subheader("Redelegations to the selected validator")    
     st.write('')
     st.markdown("We can display how users behaved. For instance, we can first look at how many redelegations there were to the selected validator from other validators, and what option did those validators vote.")
-    st.write('')
     st.write('As stated at the start of the dashboard, the following numbers take into account the days between the voting started and 7 days after it ended.')
     sql4 = df_query_aux2 + str(proposal_choice) +"""'
     group by proposal_id
@@ -1507,7 +1466,7 @@ group by 1 """
  
 
 
-st.subheader('Conclusions')
+st.header('Conclusions')
 st.markdown('**Osmosis Governance** blabla.')
 st.markdown('The most interesting things we have found are:')
 st.write('- Blah')
