@@ -115,7 +115,7 @@ st.write('Keep in mind that the following data regarding total osmo staked, I`ve
 
 df0_fil = df0[df0['proposal_id'] == proposal_choice]
 
-tab1, tab2 = st.tabs(["Validator vote, delegator vote and historical turnout", "Inspect a validator"])
+tab1, tab2, tab3 = st.tabs(["Validator vote, delegator vote and historical turnout", "Inspect a validator", "Sankey chart for redelegations"])
 
 # In[7]:
 
@@ -1462,8 +1462,106 @@ group by 1 """
     
  
  
-   
+with tab3:
  
+    SQL_QUERY_SANK_AUX = """   select distinct address, label, RANK() OVER (ORDER BY address DESC) AS RANK from osmosis.core.dim_labels
+    where address in (select distinct validator_address from osmosis.core.fact_staking  ) 
+    and address <> 'osmovaloper12l0vwef7w0xmkgktyqdzgd05jyq0lcuuqy2m8v'
+    order by rank
+    """  
+
+    SQL_QUERY_SANK1 = """  with table_0 as ( select distinct address, label, RANK() OVER (ORDER BY address DESC) AS RANK from osmosis.core.dim_labels
+    where address in (select distinct validator_address from osmosis.core.fact_staking ) 
+    and address <> 'osmovaloper12l0vwef7w0xmkgktyqdzgd05jyq0lcuuqy2m8v')
+    select b.label as from_validator, c.label as to_validator, d.RANK as from_validator_rank, e.rank as to_validator_rank, sum(amount/pow(10,decimal)) as amount_redelegated from osmosis.core.fact_staking a 
+    left join  osmosis.core.dim_labels b 
+    on a.redelegate_source_validator_address = b.address
+    left join  osmosis.core.dim_labels c 
+    on a.validator_address = c.address
+    left join  table_0 d 
+    on a.redelegate_source_validator_address = d.address
+    left join  table_0 e 
+    on a.validator_address = e.address
+    where action = 'redelegate'
+    and d.rank is not null
+    and a.to_date(block_timestamp) >= '"""
+
+    SQL_QUERY_SANK2 = """'
+
+    group by from_validator, to_validator, from_validator_rank, to_validator_rank
+    order by d.rank"""
+
+    """  
+
+    st.experimental_memo(ttl=1000000)
+    @st.experimental_memo
+    def compute_sank(a):
+        results=sdk.query(a)
+        return results
+
+    results_sank_aux = compute_sank(SQL_QUERY_SANK_AUX)
+    df_sank_aux = pd.DataFrame(results_sank_aux.records)   
+
+
+    input_feature = st.date_input( "Introduce start date",  datetime.date(2023, 1, 1))   
+    SQL_QUERY_SANK = SQL_QUERY_SANK1+ str(input_feature) + SQL_QUERY_SANK2
+
+    results_sank = compute_sank(SQL_QUERY_SANK)
+    df_sank = pd.DataFrame(results_sank.records)   
+
+
+
+
+    randcolor = []
+    for i in range(1,len(df_sank_aux['LABEL']) + 1):
+
+    randcolor.append("#{:06x}".format(random.randint(0, 0xFFFFFF))) 
+
+    df_sank_aux['COLOR'] = randcolor
+
+
+    keys_list =  df_sank_aux['RANK']
+    values_list = df_sank_aux['LABEL']
+    zip_iterator = zip(keys_list, values_list) 
+    a_dictionary = dict(zip_iterator)
+
+
+
+    df_sank_2 = pd.DataFrame(a_dictionary.items(), columns = ['RANK','LABEL'], index = keys_list)
+    df_sank_2.index = df_sank_2.index
+    df_sank_2 = df_sank_2.sort_index()
+
+
+
+
+
+
+    with st.container():
+
+        validator_choice_2 = st.selectbox("Choose a validator", options = df_sank['FROM_VALIDATOR'].unique() )
+
+
+        df_filtered = df_sank[df_sank['FROM_VALIDATOR'] == validator_choice_2]
+        df_filtered['Link color'] = 'rgba(127, 194, 65, 0.2)'
+        df_filtered['FROM_VALIDATOR_RANK'] = df_filtered['FROM_VALIDATOR_RANK']-1
+        df_filtered['TO_VALIDATOR_RANK'] = df_filtered['TO_VALIDATOR_RANK'] - 1
+
+        link = dict(source = df_filtered['FROM_VALIDATOR_RANK'].values , target = df_filtered['TO_VALIDATOR_RANK'].values, value = df_filtered['AMOUNT_REDELEGATED'], color = df_sank_aux['COLOR'])
+        node = dict(label = df_sank_2['LABEL'].values, pad = 35, thickness = 10)
+
+
+
+
+        data = go.Sankey(link = link, node = node)
+        fig = go.Figure(data)
+        fig.update_layout(
+          hovermode = 'x', 
+          font = dict(size = 20, color = 'white'), 
+          paper_bgcolor= 'rgba(0,0,0,0)',
+          width=1000, height=1300
+         ) 
+
+        st.plotly_chart(fig, use_container_width=True)  
 
 
 st.header('Conclusions')
