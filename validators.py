@@ -1520,21 +1520,21 @@ with tab3:
 
 
     randcolor = []
-    for i in range(1,len(df_sank_aux['LABEL']) + 1):
+    for i in range(1,len(df_sank_aux['label']) + 1):
 
         randcolor.append("#{:06x}".format(random.randint(0, 0xFFFFFF))) 
 
     df_sank_aux['COLOR'] = randcolor
 
 
-    keys_list =  df_sank_aux['RANK']
-    values_list = df_sank_aux['LABEL']
+    keys_list =  df_sank_aux['rank']
+    values_list = df_sank_aux['label']
     zip_iterator = zip(keys_list, values_list) 
     a_dictionary = dict(zip_iterator)
 
 
 
-    df_sank_2 = pd.DataFrame(a_dictionary.items(), columns = ['RANK','LABEL'], index = keys_list)
+    df_sank_2 = pd.DataFrame(a_dictionary.items(), columns = ['rank','label'], index = keys_list)
     df_sank_2.index = df_sank_2.index
     df_sank_2 = df_sank_2.sort_index()
 
@@ -1545,16 +1545,16 @@ with tab3:
 
     with st.container():
 
-        validator_choice_2 = st.selectbox("Choose a validator", options = df_sank['FROM_VALIDATOR'].unique() )
+        validator_choice_2 = st.selectbox("Choose a validator", options = df_sank['from_validator'].unique() )
 
 
-        df_filtered = df_sank[df_sank['FROM_VALIDATOR'] == validator_choice_2]
+        df_filtered = df_sank[df_sank['from_validator'] == validator_choice_2]
         df_filtered['Link color'] = 'rgba(127, 194, 65, 0.2)'
-        df_filtered['FROM_VALIDATOR_RANK'] = df_filtered['FROM_VALIDATOR_RANK']-1
-        df_filtered['TO_VALIDATOR_RANK'] = df_filtered['TO_VALIDATOR_RANK'] - 1
+        df_filtered['from_validator_rank'] = df_filtered['from_validator_rank']-1
+        df_filtered['to_validator_rank'] = df_filtered['to_validator_rank'] - 1
 
-        link = dict(source = df_filtered['FROM_VALIDATOR_RANK'].values , target = df_filtered['TO_VALIDATOR_RANK'].values, value = df_filtered['AMOUNT_REDELEGATED'], color = df_sank_aux['COLOR'])
-        node = dict(label = df_sank_2['LABEL'].values, pad = 35, thickness = 10)
+        link = dict(source = df_filtered['from_validator_rank'].values , target = df_filtered['to_validator_rank'].values, value = df_filtered['amount_redelegated'], color = df_sank_aux['COLOR'])
+        node = dict(label = df_sank_2['label'].values, pad = 35, thickness = 10)
 
 
 
@@ -1569,6 +1569,7 @@ with tab3:
          ) 
 
         st.plotly_chart(fig, use_container_width=True)  
+
 
 
 st.header('Conclusions')
