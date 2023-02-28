@@ -277,7 +277,7 @@ group by casuistic, b.total_amount
     
     fig1 = px.bar(df6, x="casuistic", y="percentage", color_discrete_sequence=px.colors.qualitative.Pastel2)
     fig1.update_layout(
-    title="Selected proposal and delegator total percentage",
+    title="Selected proposal - delegator total percentage",
     xaxis_title="Vote/did not vote",
     yaxis_title="Percentage of total staked at the time", 
     xaxis_tickfont_size=14,
@@ -289,7 +289,7 @@ group by casuistic, b.total_amount
    
     fig1 = px.bar(df6, x="casuistic", y="total_amount_group", color_discrete_sequence=px.colors.qualitative.Pastel2)
     fig1.update_layout(
-    title="Selected proposal and delegator votes",
+    title="Selected proposal - delegator votes",
     xaxis_title="Vote/did not vote",
     yaxis_title="Amount (OSMO) staked", 
     xaxis_tickfont_size=14,
