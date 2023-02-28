@@ -1196,22 +1196,7 @@ group by 1 """
     )
     st.plotly_chart(fig1, theme="streamlit", use_container_width=True)
     
-# In[13]: 
-    st.subheader("Additional info for the selected validator")  
  
-    st.experimental_memo(ttl=1000000)
-    @st.experimental_memo
-    def compute_5(a):
-        results=sdk.query(a)
-        return results
-
-    results3 = compute_5(sql3)
-    df3 = pd.DataFrame(results3.records)
-    st.dataframe(df3) 
-    st.text("")
-    st.markdown("The way to read the table above is as follows. For the selected proposal ID and validator, we see first the validator vote, followed by the number of its delegators who voted for any proposal, if they voted, and the amount they account for of that specific delegator.")
-    st.text("")
-
  
    
  
