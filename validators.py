@@ -445,19 +445,13 @@ group by description
     df_allvotes_filtered = df_allvotes[df_allvotes['casuistic'] == 'Voted']
     df_allvotes_filtered = df_allvotes_filtered.sort_values(by ='proposal_id', ascending = True)
 
-    fig1 = px.bar(df_allvotes_filtered, x="proposal_id", y="percentage", color_discrete_sequence=px.colors.qualitative.Vivid)
+    fig1 = px.bar(df_allvotes_filtered, x="proposal_id", y="percentage", color_discrete_sequence=px.colors.qualitative.Pastel2)
     fig1.update_layout(
     title="Historical turnout if only delegators voted",
     xaxis_title="Proposal ID",
     yaxis_title="Percentage over total amount staked", 
     xaxis_tickfont_size=14,
-    yaxis_tickfont_size=14,
-    legend=dict(
-    x=0,
-    y=1.0,
-    bgcolor='rgba(255, 255, 255, 0)',
-    bordercolor='rgba(255, 255, 255, 0)'
-), 
+    yaxis_tickfont_size=14 
     bargap=0.15, # gap between bars of adjacent location coordinates.
     bargroupgap=0.1 # gap between bars of the same location coordinate.
     )
