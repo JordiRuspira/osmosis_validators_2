@@ -1509,7 +1509,8 @@ with tab3:
     results_sank_aux = compute_sank(SQL_QUERY_SANK_AUX)
     df_sank_aux = pd.DataFrame(results_sank_aux.records)   
 
-
+    st.subheader("Sankey redelegation chart")
+    st.write('Select a starting date and validator, returns a sankey chart with all redelegations from a selected validator to other validators, between the selected date and current date.')
     input_feature = st.date_input( "Introduce start date",  datetime.date(2023, 1, 1))   
     SQL_QUERY_SANK = SQL_QUERY_SANK1+ str(input_feature) + SQL_QUERY_SANK2
 
