@@ -669,7 +669,152 @@ with tab2:
     vote
     """
  
+ # In[13]:
+
+    sql_val_det = df_query_aux2 + str(proposal_choice) +"""'
+    group by proposal_id
+    ),
+    -- This part is done to drop later all duplicate votes
+    votes_proposal_aux as (
+    select voter, proposal_id, vote_option, rank() over (partition by voter, proposal_id order by block_timestamp desc) as rank
+    from osmosis.core.fact_governance_votes
+    where tx_succeeded = 'TRUE'
+    and proposal_id =  '"""+ str(proposal_choice)+"""'
+    ),
+    votes_proposal as 
+    (select voter, 
+    proposal_id,
+    b.description
+    from votes_proposal_aux a 
+    left join osmosis.core.dim_vote_options b 
+    on a.vote_option = b.vote_id
+    where a.rank = 1
+    and proposal_id =  '"""+str(proposal_choice) +"""'
+    ),
+    redelegations as 
+    (
+    select date_trunc('day', block_timestamp) as date,
+    delegator_address,
+    validator_address,
+    redelegate_source_validator_address,
+    sum(amount/pow(10, decimal)) as amount 
+    from osmosis.core.fact_staking
+    where tx_succeeded = 'TRUE' 
+    and action = 'redelegate'
+    and date_trunc('day', block_timestamp) between to_date((select date from votes_times)) -5 and  to_date((select date from votes_times)) + 7
+    group by date, delegator_address, validator_address, REDELEGATE_SOURCE_VALIDATOR_ADDRESS
+    ),
+    validators_address as (
+    select address, label, raw_metadata:"account_address" as account_address
+    from osmosis.core.fact_validators 
+    ),
+    val_votes_aux as 
+    (
+    select voter, 
+    proposal_id, 
+    b.description, 
+    rank() over (partition by voter, proposal_id order by block_timestamp desc) as rank
+    from osmosis.core.fact_governance_votes a 
+    left join osmosis.core.dim_vote_options b 
+    on a.vote_option = b.vote_id
+    where voter in (select distinct account_address from validators_address)
+    and proposal_id =  '"""+str(proposal_choice) +"""'
+    and tx_succeeded = 'TRUE'
+    ),
+    val_votes as (
+    select voter, b.address, proposal_id, description from val_votes_aux a
+    left join validators_address b 
+    on a.voter = b.account_address
+    where rank = 1 
+    ),
+    all_votes_per_proposal_and_validator as 
+    (
+    select 
+    delegator_address, 
+    case when b.voter is null then 'Did not vote'
+    else b.description end as vote, 
+    redelegate_source_validator_address as redelegated_from,
+    validator_address as redelegated_to,
+    case when redelegated_from = 'osmovaloper14n8pf9uxhuyxqnqryvjdr8g68na98wn5amq3e5' then 'Prism validator'
+    else cc.label end as redelegated_from_label,
+    cc.rank as redelegated_from_rank, 
+    case when redelegated_to = 'osmovaloper14n8pf9uxhuyxqnqryvjdr8g68na98wn5amq3e5' then 'Prism validator'
+    else c.label end as redelegated_to_label,
+    c.rank as redelegated_to_rank,
+    case when d.description is null then 'Did not vote'
+    else d.description end as validator_redelegated_from_vote,
+    case when e.description is null then 'Did not vote'
+    else e.description end as validator_redelegated_to_vote,
+    sum(amount) as total_amount
+    from redelegations a 
+    left join votes_proposal b 
+    on a.delegator_address = b.voter
+    left join osmosis.core.fact_validators c 
+    on a.validator_address = c.address 
+    left join osmosis.core.fact_validators cc 
+    on a.redelegate_source_validator_address = cc.address 
+    left join val_votes d 
+    on a.validator_address = d.address 
+    left join val_votes e 
+    on a.redelegate_source_validator_address = d.address 
+    group by 
+    delegator_address, 
+    vote,
+    redelegated_from,
+    redelegated_to,
+    redelegated_from_label,
+    redelegated_from_rank,
+    redelegated_to_label,
+    redelegated_to_rank, 
+    validator_redelegated_from_vote,
+    validator_redelegated_to_vote
+    )
+     select concat(validator_redelegated_from_vote, '->', validator_redelegated_to_vote) as casuistic,
+  sum(total_amount)  as total_amount,
+count(distinct delegator_address) as num_delegators from all_votes_per_proposal_and_validator
+group by 1"""
+ 
+    st.experimental_memo(ttl=1000000)
+    @st.experimental_memo
+    def compute_4(a):
+        results=sdk.query(a)
+        return results
+      
+    results_val_det = compute_4(sql_val_det)
+    df_val_det = pd.DataFrame(results_val_det.records)
+    
+    st.subheader("Redelegations overview")    
+    st.write('')
+    st.write('The following chart can be used as an introduction, in order to see how delegators redelegated overall for that proposal. When selecting a proposal ID, it shows how delegators redelegated from a validator vote do another validator vote. The same is shown on the side for number of redelegators.')
+    st.write('')
+    col1, col2 = st.columns(2) 
+    
+    fig1 = px.bar(df_val_det, x="casuistic", y="total_amount", color_discrete_sequence=px.colors.qualitative.Vivid)
+    fig1.update_layout(
+    title="Selected proposal - redelegators validators choice",
+    xaxis_title="Voting changes",
+    yaxis_title="Total amount redelegated", 
+    xaxis_tickfont_size=14,
+    yaxis_tickfont_size=14,
+    bargap=0.15, # gap between bars of adjacent location coordinates.
+    bargroupgap=0.1 # gap between bars of the same location coordinate.
+    )
+    col1.plotly_chart(fig1, theme="streamlit", use_container_width=True)
+   
+    fig1 = px.bar(df_val_det, x="casuistic", y="num_delegators", color_discrete_sequence=px.colors.qualitative.Vivid)
+    fig1.update_layout(
+    title="Selected proposal - number of delegators by choice",
+    xaxis_title="Voting changes",
+    yaxis_title="Number of redelegators", 
+    xaxis_tickfont_size=14,
+    yaxis_tickfont_size=14,
+    bargap=0.15, # gap between bars of adjacent location coordinates.
+    bargroupgap=0.1 # gap between bars of the same location coordinate.
+    )
+    col2.plotly_chart(fig1, theme="streamlit", use_container_width=True)   
+        
 # In[10]:
+
 
     
     st.subheader("Redelegations from the selected validator")    
@@ -990,6 +1135,8 @@ with tab2:
         st.plotly_chart(fig1, theme="streamlit", use_container_width=True)
         st.text("")
 
+    
+    
 # In[13]: 
     
     st.subheader("Delegators distribution for the selected validator") 
