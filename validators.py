@@ -100,9 +100,9 @@ df2.info()
 
 import math
 st.subheader('Selecting a proposal ID')
-
+selection = df1['proposal_id'].unique().sort()
 proposal_choice = '427'
-proposal_choice = st.selectbox("Select a proposal", options = df1['proposal_id'].unique() ) 
+proposal_choice = st.selectbox("Select a proposal", options = selection ) 
 
 st.write('We can see how validators voted on the selected proposal, ordered by rank and voting option.') 
 st.write('')
